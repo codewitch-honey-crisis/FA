@@ -115,7 +115,10 @@ namespace LexDemo
 		}
 		static void Perf(int[][] prog,string test)
 		{
-			var sw = new Stopwatch();
+			var sw = PrecisionDateTime.IsAvailable?null:new Stopwatch();
+			DateTime utcStart;
+			DateTime utcEnd;
+			TimeSpan elapsed=TimeSpan.Zero;
 			const int ITER = 100;
 			ConsoleUtility.WriteProgressBar(0,false);
 			for (var i = 0; i < ITER; ++i)
@@ -126,13 +129,23 @@ namespace LexDemo
 				while (LexContext.EndOfInput != lc.Current)
 				{
 					lc.ClearCapture();
-					sw.Start();
-					var acc = Lex.Run(prog, lc);
-					sw.Stop();
+					if (!PrecisionDateTime.IsAvailable)
+					{
+						sw.Start();
+						var acc = Lex.Run(prog, lc);
+						sw.Stop();
+						elapsed += sw.Elapsed;
+					} else
+					{
+						utcStart = PrecisionDateTime.UtcNow;
+						var acc = Lex.Run(prog, lc);
+						utcEnd = PrecisionDateTime.UtcNow;
+						elapsed += (utcEnd - utcStart);
+					}
 				}
 			}
 			ConsoleUtility.EraseProgressBar();
-			Console.WriteLine("Lexed in " + sw.ElapsedMilliseconds / (float)ITER + " msec");
+			Console.WriteLine("Lexed in " + elapsed.TotalMilliseconds / (float)ITER + " msec");
 		}
 		static void Test()
 		{

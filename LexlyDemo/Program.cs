@@ -30,8 +30,8 @@ namespace LexlyDemo
 			{
 				Console.WriteLine("{0}: {1}", tok.SymbolId, tok.Value);
 			}
-
-			var sw = new Stopwatch();
+			
+			Stopwatch sw = new Stopwatch();
 			const int ITER = 100;
 			for (var i = 0; i < ITER; ++i)
 			{
