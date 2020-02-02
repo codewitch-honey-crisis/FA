@@ -6,7 +6,7 @@ namespace Rolex
 {
 	class LexRule
 	{
-		public int Id;
+		public int Id = int.MinValue;
 		public string Symbol;
 		public string Expression;
 		public IList<KeyValuePair<string, object>> Attributes;

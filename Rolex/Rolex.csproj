@@ -67,7 +67,10 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PreBuildEvent>"csbrick.exe" "$(SolutionDir)FA\FA.csproj" /output "$(ProjectDir)FA.brick.cs"
-"deslang.exe" "$(ProjectDir)Export\PrototypeTokenizerTemplate.cs" "$(ProjectDir)Export\TableTokenizer.cs" "$(ProjectDir)Export\TableTokenizerTemplate.cs" "$(ProjectDir)Export\Token.cs" /output "$(ProjectDir)Deslanged.cs" /namespace Rolex /ifstale</PreBuildEvent>
+    <PreBuildEvent>"$(SolutionDir)csbrick.exe" "$(SolutionDir)FA\FA.csproj" /output "$(ProjectDir)FA.brick.cs"
+"$(SolutionDir)deslang.exe" "$(ProjectDir)Export\PrototypeTokenizerTemplate.cs" "$(ProjectDir)Export\TableTokenizer.cs" "$(ProjectDir)Export\TableTokenizerTemplate.cs" "$(ProjectDir)Export\Token.cs" /output "$(ProjectDir)Deslanged.cs" /namespace Rolex /ifstale</PreBuildEvent>
+  </PropertyGroup>
+  <PropertyGroup>
+    <PostBuildEvent>copy "$(TargetPath)" "$(SolutionDir)"</PostBuildEvent>
   </PropertyGroup>
 </Project>

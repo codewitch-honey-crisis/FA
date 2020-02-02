@@ -54,6 +54,6 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PreBuildEvent>"$(SolutionDir)Rolex\bin\Release\Rolex.exe" "$(ProjectDir)Example.rl" /output "$(ProjectDir)ExampleTokenizer.cs" /namespace RolexDemo /dfagraph ..\..\dfa.jpg /nfagraph ..\..\nfa.jpg</PreBuildEvent>
+    <PreBuildEvent>"$(SolutionDir)Rolex.exe" "$(ProjectDir)Example.rl" /output "$(ProjectDir)ExampleTokenizer.cs" /namespace RolexDemo</PreBuildEvent>
   </PropertyGroup>
 </Project>

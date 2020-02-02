@@ -259,24 +259,25 @@ namespace Rolex
 		{
 			if (_input.MoveNext())
 			{
-				_inputCurrent = _input.Current;
+				_inputCurrent = Convert.ToInt32(_input.Current);
 				if (char.IsHighSurrogate(_input.Current))
 				{
 					if (!_input.MoveNext())
 						throw new IOException("Unexpected end of input while looking for Unicode low surrogate.");
 					++_position;
-					_inputCurrent = char.ConvertToUtf32((char)_inputCurrent, _input.Current);
+					// must use convert for #$*( VB compat
+					_inputCurrent = char.ConvertToUtf32(Convert.ToChar(_inputCurrent), _input.Current);
 				}
 				if (_BeforeBegin != _state)
 				{
 					
 					++_position;
-					if ('\n' == _inputCurrent)
+					if (10 == _inputCurrent) // \n
 					{
 						_column = 1;
 						++_line;
 					}
-					else if ('\t' == _inputCurrent)
+					else if (9 == _inputCurrent) // \t
 						_column += _TabWidth;
 					else
 						++_column;
@@ -286,12 +287,12 @@ namespace Rolex
 					// compensate because initial move
 					// shouldn't advance
 					// corner case for first move
-					if ('\n' == _inputCurrent)
+					if (10 == _inputCurrent)
 					{
 						_column = 1;
 						++_line;
 					}
-					else if ('\t' == _inputCurrent)
+					else if (9 == _inputCurrent)
 						_column = _TabWidth-1;
 					else
 						--_column;
@@ -314,7 +315,7 @@ namespace Rolex
 			if (_state != _InnerFinished)
 			{
 				_buffer.Append(char.ConvertFromUtf32(_inputCurrent));
-				return _input.Current == character;
+				return Convert.ToInt32(_input.Current) == character;
 			}
 			return false;
 		}

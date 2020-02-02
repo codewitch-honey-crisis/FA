@@ -227,27 +227,8 @@ namespace Rolex
 						}
 						else
 						{
-							/*CodeDomVisitor.Visit(Shared.TableTokenizerTemplate, (ctx) => {
-								td = ctx.Target as CodeTypeDeclaration;
-								if (null != td)
-								{
-									System.Diagnostics.Debugger.Break();
-									if (td.Name.EndsWith("Template"))
-									{
-										origName += td.Name;
-										td.Name = name;
-										var f = CodeDomUtility.GetByName("DfaTable", td.Members) as CodeMemberField;
-										f.InitExpression = CodeGenerator.GenerateDfaTableInitializer(dfaTable);
-										f = CodeDomUtility.GetByName("NodeFlags", td.Members) as CodeMemberField;
-										f.InitExpression = CodeDomUtility.Literal(nodeFlags);
-										f = CodeDomUtility.GetByName("BlockEnds", td.Members) as CodeMemberField;
-										f.InitExpression = CodeDomUtility.Literal(blockEnds);
-										CodeGenerator.GenerateSymbolConstants(td, symbolTable);
-										ctx.Cancel = true;
-									}
-								}
-							});*/
-							if (null == td) // for some reason the above fails in devstudio DTE *sometimes* so do this
+							
+							if (null == td)
 							{
 								td = Deslanged.TableTokenizerTemplate.Namespaces[1].Types[0];
 								origName += td.Name;

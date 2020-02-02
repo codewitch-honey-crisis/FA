@@ -7,7 +7,6 @@ namespace RolexDemo
 	{
 		static void Main(string[] args)
 		{
-			//var s = "test";
 			var input = "base foo \"bar\" foobar  bar 123 baz -345 fubar 1foo *#( 0";
 			using (var sr = File.OpenText("..\\..\\Program.cs"))
 				input = sr.ReadToEnd();
