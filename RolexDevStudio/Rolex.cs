@@ -30,7 +30,6 @@ namespace RolexDevStudio
     
         public Rolex()
         {
-            _watcher = new FileSystemWatcher();
             EnvDTE.DTE dte;
             try
             {
