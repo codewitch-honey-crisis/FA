@@ -8,7 +8,7 @@ using L;
 
 namespace LexlyDemo
 {
-	using TestTokenizer = SlangTokenizer;
+	using TestTokenizer = ExampleTokenizer;
 	class Program
 	{
 		static void Main(string[] args)

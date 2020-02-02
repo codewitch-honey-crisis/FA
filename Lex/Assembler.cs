@@ -82,7 +82,7 @@ namespace L
 							{
 								var lbl = inst.Labels[j];
 								if (!lmap.TryGetValue(lbl, out dst))
-									throw new InvalidProgramException("Switch references undefined label " + inst.Name + " at line " + inst.Line.ToString());
+									throw new InvalidProgramException("Switch references undefined label " + lbl + " at line " + inst.Line.ToString());
 								sw.Add(dst);
 							}
 						}

@@ -45,6 +45,7 @@
     <None Include="App.config" />
     <Content Include="identifier.lasm" />
     <Content Include="lexer.lasm" />
+    <None Include="dfa - Copy.lasm" />
     <None Include="dfa.lasm" />
     <None Include="int.lasm" />
   </ItemGroup>

@@ -1,14 +1,7 @@
-﻿; lex int
-save 0
-switch case "0":int_done, case "-":int_pos, case "1".."9":int_loop, default:error
+﻿switch case "0":int_done, case "-":int_pos, case "1".."9":int_loop
 int_pos: set "1".."9"
 int_loop: 
 jmp int_part, int_done
 int_part: set "0".."9"
 jmp int_loop
-int_done: save 1
-match 0
-error:
-any
-save 1
-match -1
+int_done:

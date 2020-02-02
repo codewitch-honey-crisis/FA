@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using CU;
@@ -61,13 +62,13 @@ namespace LexDemo
 			while (LexContext.EndOfInput!=lc.Current)
 			{
 				var stats = Lex.RunWithLoggingAndStatistics(prog, lc, TextWriter.Null, out result);
-				maxFiberCount += stats.MaxFiberCount;
+				maxFiberCount = stats.MaxFiberCount;
 				if (stats.AverageCharacterPasses > avgCharPasses)
 					avgCharPasses = stats.AverageCharacterPasses;
 
 				++count;
-			}
-			Console.WriteLine("NFA ran with "+maxFiberCount/count + " average fibers and " + avgCharPasses+ " average char passes");
+}
+			Console.WriteLine("NFA ran with "+maxFiberCount+" max fibers and " + avgCharPasses+ " average char passes");
 			count = 0f;
 			maxFiberCount = 0;
 			avgCharPasses = 0f;
@@ -76,13 +77,13 @@ namespace LexDemo
 			while (LexContext.EndOfInput != lc.Current)
 			{
 				var stats = Lex.RunWithLoggingAndStatistics(progOpt, lc, TextWriter.Null, out result);
-				maxFiberCount += stats.MaxFiberCount;
+				maxFiberCount = stats.MaxFiberCount;
 				if (stats.AverageCharacterPasses > avgCharPasses)
 					avgCharPasses = stats.AverageCharacterPasses;
 
 				++count;
 			}
-			Console.WriteLine("NFA+DFA (optimized) ran with " + maxFiberCount/count + " average fibers and " + avgCharPasses + " average char passes");
+			Console.WriteLine("NFA+DFA (optimized) ran with " +  maxFiberCount+ " max fibers and " + avgCharPasses + " average char passes");
 			count = 0;
 			maxFiberCount = 0;
 			avgCharPasses = 0f;
@@ -90,13 +91,13 @@ namespace LexDemo
 			while (LexContext.EndOfInput != lc.Current)
 			{
 				var stats = Lex.RunWithLoggingAndStatistics(progDfa, lc, TextWriter.Null, out result);
-				maxFiberCount += stats.MaxFiberCount;
+				maxFiberCount = stats.MaxFiberCount;
 				if (stats.AverageCharacterPasses > avgCharPasses)
 					avgCharPasses = stats.AverageCharacterPasses;
 				
 				++count;
 			}
-			Console.WriteLine("DFA ran with " + maxFiberCount/count + " average fibers and " + avgCharPasses+ " average char passes");
+			Console.WriteLine("DFA ran with " + maxFiberCount + " max fibers and " + avgCharPasses+ " average char passes");
 
 			for (var i = 0; i < 5; ++i)
 				test = string.Concat(test, test);

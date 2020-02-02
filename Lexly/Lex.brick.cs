@@ -16,8 +16,8 @@ break;case Inst.Switch:var sw=new List<int>();if(0==inst.Cases.Length){if(0==ins
  k=0;k<inst.Cases.Length;k++){var c=inst.Cases[k];sw.AddRange(c.Key);sw.Add(-1);var lbl=c.Value;if(!lmap.TryGetValue(lbl,out dst))throw new InvalidProgramException("Switch references undefined label "
 +inst.Name+" at line "+inst.Line.ToString());sw.Add(dst);}if(0<inst.Cases.Length&&(null!=inst.Labels&&0<inst.Labels.Length))sw.Add(-2);if(null!=inst.Labels)
 {for(var j=0;j<inst.Labels.Length;j++){var lbl=inst.Labels[j];if(!lmap.TryGetValue(lbl,out dst))throw new InvalidProgramException("Switch references undefined label "
-+inst.Name+" at line "+inst.Line.ToString());sw.Add(dst);}}code=sw.ToArray();break;case Inst.Any:code=new int[1];code[0]=inst.Opcode;break;case Inst.Char:
-case Inst.UCode:case Inst.NUCode:case Inst.Save:case Inst.Match:code=new int[2];code[0]=inst.Opcode;code[1]=inst.Value;break;case Inst.Set:case Inst.NSet:
++lbl+" at line "+inst.Line.ToString());sw.Add(dst);}}code=sw.ToArray();break;case Inst.Any:code=new int[1];code[0]=inst.Opcode;break;case Inst.Char:case
+ Inst.UCode:case Inst.NUCode:case Inst.Save:case Inst.Match:code=new int[2];code[0]=inst.Opcode;code[1]=inst.Value;break;case Inst.Set:case Inst.NSet:
 var set=new List<int>(inst.Ranges.Length+1);set.Add(inst.Opcode);Compiler.SortRanges(inst.Ranges);set.AddRange(inst.Ranges);code=set.ToArray();break; case
  Inst.Jmp:var jmp=new List<int>(inst.Labels.Length+1);jmp.Add(inst.Opcode);for(var j=0;j<inst.Labels.Length;j++){var lbl=inst.Labels[j];if(!lmap.TryGetValue(lbl,
 out dst))throw new InvalidProgramException("Jmp references undefined label "+inst.Name+" at line "+inst.Line.ToString());jmp.Add(dst);}code=jmp.ToArray();

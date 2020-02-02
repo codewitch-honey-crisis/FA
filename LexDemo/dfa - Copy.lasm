@@ -1,0 +1,21 @@
+﻿save 0
+switch case "A".."Z","_","a".."z":id_part, case "0":int_done,case "-":int_neg,case "1".."9":int_digits,case "\t", "\n", "\v", "\f", "\r", " ":space,default:error
+id_part:
+switch case "0".."9","A".."Z","_","a".."z":id_part, default:id_done
+id_done:
+save 1
+match 0
+int_neg:
+set "1".."9"
+int_digits:
+switch case "0".."9":int_digits, default:int_done
+int_done:
+save 1
+match 1
+space:
+save 1
+match 2
+error:
+any
+save 1
+match -1
