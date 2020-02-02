@@ -1,4 +1,4 @@
-﻿#define OPTIMIZE
+﻿//#define OPTIMIZE
 using System;
 using System.CodeDom;
 using System.CodeDom.Compiler;
@@ -33,6 +33,7 @@ namespace Lexly
 			string codenamespace = null;
 			bool noshared = false;
 			bool ifstale = false;
+			bool dump = false;
 			string graphfile = null;
 			// our working variables
 			TextReader input = null;
@@ -92,6 +93,9 @@ namespace Lexly
 							case "/ifstale":
 								ifstale = true;
 								break;
+							case "/dump":
+								dump = true;
+								break;
 							default:
 								throw new ArgumentException(string.Format("Unknown switch {0}", args[i]));
 						}
@@ -140,13 +144,13 @@ namespace Lexly
 						input = null;
 						
 						_FillRuleIds(rules);
-
+						
 						var ccu = new CodeCompileUnit();
 						var cns = new CodeNamespace();
 						if (!string.IsNullOrEmpty(codenamespace))
 							cns.Name = codenamespace;
 						ccu.Namespaces.Add(cns);
-						var program = _BuildLexer(rules);
+						var program = _BuildLexer(rules,dump);
 						var symbolTable = _BuildSymbolTable(rules);
 						var blockEnds = _BuildBlockEnds(rules);
 						var nodeFlags = _BuildNodeFlags(rules);
@@ -536,23 +540,39 @@ namespace Lexly
 			return result;
 
 		}
-		static int[][] _BuildLexer(IList<_LexRule> rules)
+		static int[][] _BuildLexer(IList<_LexRule> rules,bool dump)
 		{
+			if(dump)
+			{
+				Console.WriteLine();
+			}
 			var parts = new KeyValuePair<int,int[][]>[rules.Count];
 			for (var i = 0; i < parts.Length; ++i)
 			{
 				var id = rules[i].Id;
 				var rule = rules[i];
 				parts[i] = new KeyValuePair<int, int[][]>(id, rule.Part);
-				
+				if (dump)
+				{
+					Console.Error.WriteLine("Disassembly of "+rule.Symbol+":");
+					Console.Error.WriteLine(Lex.Disassemble(rule.Part));
+					Console.Error.WriteLine();
+				}
 			}
-			return Lex.LinkLexerParts(
+			var prog = Lex.LinkLexerParts(
 #if OPTIMIZE
 				true
 #else
 				false
 #endif
 				, parts);
+			if (dump)
+			{
+				Console.Error.WriteLine("Disassembly of lexer:");
+				Console.Error.WriteLine(Lex.Disassemble(prog));
+				Console.Error.WriteLine();
+			}
+			return prog;
 		}
 
 		// do our error handling here (release builds)

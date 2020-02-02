@@ -1,6 +1,5 @@
 ﻿#region Usings
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using LC;
@@ -9,10 +8,9 @@ using L;
 
 namespace LexlyDemo
 {
-	using TestTokenizer = ExampleTokenizer;
+	using TestTokenizer = SlangTokenizer;
 	class Program
 	{
-		
 		static void Main(string[] args)
 		{
 			var text = "foo 123 bar";

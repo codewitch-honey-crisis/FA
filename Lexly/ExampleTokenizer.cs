@@ -15,34 +15,13 @@ using System.IO;
 using System.Text;
 
 
-///  <summary>
-///  Reference implementation for generated shared code
-///  </summary>
 [System.CodeDom.Compiler.GeneratedCodeAttribute("Lexly", "0.1.0.0")]
 internal struct Token {
-    ///  <summary>
-    ///  Indicates the line where the token occurs
-    ///  </summary>
     public int Line;
-    ///  <summary>
-    ///  Indicates the column where the token occurs
-    ///  </summary>
     public int Column;
-    ///  <summary>
-    ///  Indicates the position where the token occurs
-    ///  </summary>
     public long Position;
-    ///  <summary>
-    ///  Indicates the symbol id or -1 for the error symbol
-    ///  </summary>
     public int SymbolId;
-    ///  <summary>
-    ///  Indicates the value of the token
-    ///  </summary>
     public string Value;
-    ///  <summary>
-    ///  Always null in Lexly
-    ///  </summary>
     public Token[] Skipped;
 }
 [System.CodeDom.Compiler.GeneratedCodeAttribute("Lexly", "0.1.0.0")]
@@ -51,7 +30,6 @@ internal partial class Tokenizer : object, IEnumerable<Token> {
     public const int ErrorSymbol = -1;
     private int[][] _program;
     private string[] _blockEnds;
-    //  our node flags. Currently only used for the hidden attribute
     private int[] _nodeFlags;
     private IEnumerable<char> _input;
     private int _tabWidth;
@@ -82,28 +60,16 @@ internal partial class Tokenizer : object, IEnumerable<Token> {
 internal class TokenizerEnumerator : object, IEnumerator<Token> {
     public const int ErrorSymbol = -1;
     private const int _EosSymbol = -2;
-    #region Opcodes
     const int _Match = 1;
-    //  match symbol
     const int _Jmp = 2;
-    //  jmp addr
-    const int _Split = 3;
-    //  split addr1, addr2
+    const int _Switch = 3;
     const int _Any = 4;
-    //  any
     const int _Char = 5;
-    //  char ch
     const int _Set = 6;
-    //  set packedRange1Left,packedRange1Right,packedRange2Left,packedRange2Right...
     const int _NSet = 7;
-    //  nset packedRange1Left,packedRange1Right,packedRange2Left,packedRange2Right...
     const int _UCode = 8;
-    //  ucode cat
     const int _NUCode = 9;
-    //  nucode cat
     const int _Save = 10;
-    #endregion
-    //  save slot
     private const int _Disposed = -3;
     private const int _BeforeBegin = -2;
     private const int _EndOfInput = -1;
@@ -211,6 +177,10 @@ internal class TokenizerEnumerator : object, IEnumerator<Token> {
                             == (0 
                             == (this._nodeFlags[this._current.SymbolId] & 1))))) {
                     done = false;
+                    if ((this._ch == TokenizerEnumerator._EndOfInput)) {
+                        this._state = TokenizerEnumerator._EndOfInput;
+                        return false;
+                    }
                     this._current.Line = this._line;
                     this._current.Column = this._column;
                     this._current.Position = this._position;
@@ -223,7 +193,6 @@ internal class TokenizerEnumerator : object, IEnumerator<Token> {
         return (false 
                     == (TokenizerEnumerator._EndOfInput == this._state));
     }
-    //  moves to the next position, updates the state accordingly, and tracks the cursor position
     bool _MoveNextInput() {
         if ((this._ch == TokenizerEnumerator._EndOfInput)) {
             return false;
@@ -264,7 +233,6 @@ internal class TokenizerEnumerator : object, IEnumerator<Token> {
         this._ch = TokenizerEnumerator._EndOfInput;
         return false;
     }
-    //  reads until the specified character, consuming it, returning false if it wasn't found
     bool _TryReadUntil(char character) {
         char ch = this._input.Current;
         this._capture.Append(ch);
@@ -285,7 +253,6 @@ internal class TokenizerEnumerator : object, IEnumerator<Token> {
         }
         return false;
     }
-    //  reads until the string is encountered, capturing it.
     bool _TryReadUntilBlockEnd(string blockEnd) {
         int ll = this._capture.Length;
         for (
@@ -341,10 +308,6 @@ internal class TokenizerEnumerator : object, IEnumerator<Token> {
         int[] pc = t.Program[t.Index];
         int op = pc[0];
         if ((TokenizerEnumerator._Jmp == op)) {
-            TokenizerEnumerator._EnqueueFiber(ref lcount, ref l, new TokenizerFiber(t, pc[1], t.Saved), sp);
-            return;
-        }
-        if ((TokenizerEnumerator._Split == op)) {
             for (int j = 1; (j < pc.Length); j = (j + 1)) {
                 TokenizerEnumerator._EnqueueFiber(ref lcount, ref l, new TokenizerFiber(t.Program, pc[j], t.Saved), sp);
             }
@@ -426,54 +389,106 @@ internal class TokenizerEnumerator : object, IEnumerator<Token> {
                 pc = t.Program[t.Index];
                 saved = t.Saved;
                 int op = pc[0];
+                if ((TokenizerEnumerator._Switch == op)) {
+                    int idx = 1;
+                    for (
+                    ; ((idx < pc.Length) 
+                                && (-2 < pc[idx])); 
+                    ) {
+                        if (TokenizerEnumerator._InRanges(pc, ref idx, cur)) {
+                            for (
+                            ; (false 
+                                        == (-1 == pc[idx])); 
+                            ) {
+                                idx = (idx + 1);
+                            }
+                            idx = (idx + 1);
+                            passed = true;
+                            TokenizerEnumerator._EnqueueFiber(ref nextFiberCount, ref this._nextFibers, new TokenizerFiber(t, pc[idx], saved), (sp + 1));
+                            idx = pc.Length;
+                        }
+                        else {
+                            for (
+                            ; (false 
+                                        == (-1 == pc[idx])); 
+                            ) {
+                                idx = (idx + 1);
+                            }
+                            idx = (idx + 1);
+                        }
+                        idx = (idx + 1);
+                    }
+                    if (((idx < pc.Length) 
+                                && (-2 == pc[idx]))) {
+                        idx = (idx + 1);
+                        for (
+                        ; (idx < pc.Length); 
+                        ) {
+                            TokenizerEnumerator._EnqueueFiber(ref currentFiberCount, ref this._currentFibers, new TokenizerFiber(t, pc[idx], saved), sp);
+                            idx = (idx + 1);
+                        }
+                    }
+                }
                 if ((TokenizerEnumerator._Char == op)) {
                     if ((cur == pc[1])) {
                         passed = true;
                         TokenizerEnumerator._EnqueueFiber(ref nextFiberCount, ref this._nextFibers, new TokenizerFiber(t, (t.Index + 1), saved), (sp + 1));
                     }
                 }
-                if ((TokenizerEnumerator._Set == op)) {
-                    if (TokenizerEnumerator._InRanges(pc, cur)) {
-                        passed = true;
-                        TokenizerEnumerator._EnqueueFiber(ref nextFiberCount, ref this._nextFibers, new TokenizerFiber(t, (t.Index + 1), saved), (sp + 1));
+                else {
+                    if ((TokenizerEnumerator._Set == op)) {
+                        if (TokenizerEnumerator._InRanges(pc, cur)) {
+                            passed = true;
+                            TokenizerEnumerator._EnqueueFiber(ref nextFiberCount, ref this._nextFibers, new TokenizerFiber(t, (t.Index + 1), saved), (sp + 1));
+                        }
                     }
-                }
-                if ((TokenizerEnumerator._NSet == op)) {
-                    if (((false == TokenizerEnumerator._InRanges(pc, cur)) 
-                                && (false 
-                                == (TokenizerEnumerator._EndOfInput == this._ch)))) {
-                        passed = true;
-                        TokenizerEnumerator._EnqueueFiber(ref nextFiberCount, ref this._nextFibers, new TokenizerFiber(t, (t.Index + 1), saved), (sp + 1));
+                    else {
+                        if ((TokenizerEnumerator._NSet == op)) {
+                            if (((false == TokenizerEnumerator._InRanges(pc, cur)) 
+                                        && (false 
+                                        == (TokenizerEnumerator._EndOfInput == this._ch)))) {
+                                passed = true;
+                                TokenizerEnumerator._EnqueueFiber(ref nextFiberCount, ref this._nextFibers, new TokenizerFiber(t, (t.Index + 1), saved), (sp + 1));
+                            }
+                        }
+                        else {
+                            if ((TokenizerEnumerator._UCode == op)) {
+                                string str = char.ConvertFromUtf32(cur);
+                                if ((((int)(char.GetUnicodeCategory(str, 0))) == pc[1])) {
+                                    passed = true;
+                                    TokenizerEnumerator._EnqueueFiber(ref nextFiberCount, ref this._nextFibers, new TokenizerFiber(t, (t.Index + 1), saved), (sp + 1));
+                                }
+                            }
+                            else {
+                                if ((TokenizerEnumerator._NUCode == op)) {
+                                    string str = char.ConvertFromUtf32(cur);
+                                    if (((false 
+                                                == (((int)(char.GetUnicodeCategory(str, 0))) == pc[1])) 
+                                                && (false 
+                                                == (TokenizerEnumerator._EndOfInput == this._ch)))) {
+                                        passed = true;
+                                        TokenizerEnumerator._EnqueueFiber(ref nextFiberCount, ref this._nextFibers, new TokenizerFiber(t, (t.Index + 1), saved), (sp + 1));
+                                    }
+                                }
+                                else {
+                                    if ((TokenizerEnumerator._Any == op)) {
+                                        if ((false 
+                                                    == (TokenizerEnumerator._EndOfInput == this._ch))) {
+                                            passed = true;
+                                            TokenizerEnumerator._EnqueueFiber(ref nextFiberCount, ref this._nextFibers, new TokenizerFiber(t, (t.Index + 1), saved), (sp + 1));
+                                        }
+                                    }
+                                    else {
+                                        if ((TokenizerEnumerator._Match == op)) {
+                                            matched = saved;
+                                            match = pc[1];
+                                            i = currentFiberCount;
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
-                }
-                if ((TokenizerEnumerator._UCode == op)) {
-                    string str = char.ConvertFromUtf32(cur);
-                    if ((((int)(char.GetUnicodeCategory(str, 0))) == pc[1])) {
-                        passed = true;
-                        TokenizerEnumerator._EnqueueFiber(ref nextFiberCount, ref this._nextFibers, new TokenizerFiber(t, (t.Index + 1), saved), (sp + 1));
-                    }
-                }
-                if ((TokenizerEnumerator._NUCode == op)) {
-                    string str = char.ConvertFromUtf32(cur);
-                    if (((false 
-                                == (((int)(char.GetUnicodeCategory(str, 0))) == pc[1])) 
-                                && (false 
-                                == (TokenizerEnumerator._EndOfInput == this._ch)))) {
-                        passed = true;
-                        TokenizerEnumerator._EnqueueFiber(ref nextFiberCount, ref this._nextFibers, new TokenizerFiber(t, (t.Index + 1), saved), (sp + 1));
-                    }
-                }
-                if ((TokenizerEnumerator._Any == op)) {
-                    if ((false 
-                                == (TokenizerEnumerator._EndOfInput == this._ch))) {
-                        passed = true;
-                        TokenizerEnumerator._EnqueueFiber(ref nextFiberCount, ref this._nextFibers, new TokenizerFiber(t, (t.Index + 1), saved), (sp + 1));
-                    }
-                }
-                if ((TokenizerEnumerator._Match == op)) {
-                    matched = saved;
-                    match = pc[1];
-                    i = currentFiberCount;
                 }
             }
             if (passed) {
@@ -515,6 +530,27 @@ internal class TokenizerEnumerator : object, IEnumerator<Token> {
         }
         return -1;
     }
+    static bool _InRanges(int[] pc, ref int index, int ch) {
+        bool found = false;
+        for (int j = index; (j < pc.Length); j = (j + 1)) {
+            if ((0 > pc[j])) {
+                index = j;
+                return false;
+            }
+            int first = pc[j];
+            j = (j + 1);
+            int last = pc[j];
+            if ((ch <= last)) {
+                if ((first <= ch)) {
+                    found = true;
+                }
+                index = j;
+                return found;
+            }
+        }
+        index = pc.Length;
+        return found;
+    }
 }
 [System.CodeDom.Compiler.GeneratedCodeAttribute("Lexly", "0.1.0.0")]
 internal struct TokenizerFiber {
@@ -535,14 +571,14 @@ internal struct TokenizerFiber {
 internal partial class ExampleTokenizer : Tokenizer {
     internal static int[][] Program = new int[][] {
             new int[] {
-                    3,
-                    1,
-                    8,
-                    20,
-                    24},
-            new int[] {
                     10,
                     0},
+            new int[] {
+                    2,
+                    2,
+                    8,
+                    19,
+                    22},
             new int[] {
                     6,
                     65,
@@ -552,7 +588,7 @@ internal partial class ExampleTokenizer : Tokenizer {
                     97,
                     122},
             new int[] {
-                    3,
+                    2,
                     4,
                     6},
             new int[] {
@@ -575,22 +611,19 @@ internal partial class ExampleTokenizer : Tokenizer {
                     1,
                     0},
             new int[] {
-                    10,
-                    0},
-            new int[] {
-                    3,
-                    10,
-                    12},
+                    2,
+                    9,
+                    11},
             new int[] {
                     5,
                     48},
             new int[] {
                     2,
-                    18},
+                    17},
             new int[] {
-                    3,
-                    13,
-                    14},
+                    2,
+                    12,
+                    13},
             new int[] {
                     5,
                     45},
@@ -599,25 +632,22 @@ internal partial class ExampleTokenizer : Tokenizer {
                     49,
                     57},
             new int[] {
-                    3,
-                    16,
-                    18},
+                    2,
+                    15,
+                    17},
             new int[] {
                     6,
                     48,
                     57},
             new int[] {
                     2,
-                    15},
+                    14},
             new int[] {
                     10,
                     1},
             new int[] {
                     1,
                     1},
-            new int[] {
-                    10,
-                    0},
             new int[] {
                     6,
                     9,
@@ -638,9 +668,6 @@ internal partial class ExampleTokenizer : Tokenizer {
             new int[] {
                     1,
                     2},
-            new int[] {
-                    10,
-                    0},
             new int[] {
                     4},
             new int[] {

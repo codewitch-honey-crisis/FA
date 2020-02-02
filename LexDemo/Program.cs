@@ -21,7 +21,7 @@ namespace LexDemo
 				 @int, // int
 				 space // space
 			 );
-			prog = Lex.CompileRegexPart(@int);
+			prog = Lex.CompileRegexPart(@int,true);
 			prog = Lex.FinalizePart(prog);
 			Console.WriteLine(Lex.Disassemble(prog));
 			var result = 0;

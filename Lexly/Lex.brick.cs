@@ -211,14 +211,14 @@ i=0;i<ic;++i){var j=prog[jmpfixes[i]];j[1]=prog.Count;}if(-1<firstNull){jjmp[fir
 case Ast.UCode: inst=new int[2];inst[0]=(ast.Kind==Ast.UCode)?UCode:NUCode;inst[1]=ast.Value;prog.Add(inst);break;case Ast.Opt:inst=new int[3]; inst[0]
 =Jmp;prog.Add(inst);inst[1]=prog.Count; for(var i=0;i<ast.Exprs.Length;i++)if(null!=ast.Exprs[i])EmitPart(ast.Exprs[i],prog);inst[2]=prog.Count;if(ast.IsLazy)
 { var t=inst[1];inst[1]=inst[2];inst[2]=t;}break; case Ast.Star:ast.Min=0;ast.Max=0;goto case Ast.Rep;case Ast.Plus:ast.Min=1;ast.Max=0;goto case Ast.Rep;
-case Ast.Rep: if(ast.Min>0&&ast.Max>0&&ast.Min>ast.Max)throw new ArgumentOutOfRangeException("Max");int idx;Ast opt;Ast rep;switch(ast.Min){case-1:case
- 0:switch(ast.Max){ case-1:case 0:idx=prog.Count;inst=new int[3];inst[0]=Jmp;prog.Add(inst);inst[1]=prog.Count;for(var i=0;i<ast.Exprs.Length;i++)if(null
-!=ast.Exprs[i])EmitPart(ast.Exprs[i],prog);jmp=new int[2];jmp[0]=Jmp;jmp[1]=idx;prog.Add(jmp);inst[2]=prog.Count;if(ast.IsLazy){ var t=inst[1];inst[1]
-=inst[2];inst[2]=t;}return; case 1:opt=new Ast();opt.Kind=Ast.Opt;opt.Exprs=ast.Exprs;opt.IsLazy=ast.IsLazy;EmitPart(opt,prog);return;default: opt=new
- Ast();opt.Kind=Ast.Opt;opt.Exprs=ast.Exprs;opt.IsLazy=ast.IsLazy;EmitPart(opt,prog);for(var i=1;i<ast.Max;++i){EmitPart(opt,prog);}return;}case 1:switch
-(ast.Max){ case-1:case 0:idx=prog.Count;for(var i=0;i<ast.Exprs.Length;i++)if(null!=ast.Exprs[i])EmitPart(ast.Exprs[i],prog);inst=new int[3];inst[0]=Jmp;
-prog.Add(inst);inst[1]=idx;inst[2]=prog.Count;if(ast.IsLazy){ var t=inst[1];inst[1]=inst[2];inst[2]=t;}return;case 1: for(var i=0;i<ast.Exprs.Length;i++)
-if(null!=ast.Exprs[i])EmitPart(ast.Exprs[i],prog);return;default: rep=new Ast();rep.Min=0;rep.Max=ast.Max-1;rep.IsLazy=ast.IsLazy;rep.Exprs=ast.Exprs;
+case Ast.Rep: if(ast.Min>0&&ast.Max>0&&ast.Min>ast.Max)throw new ArgumentOutOfRangeException("Max");int idx2;Ast opt;Ast rep;switch(ast.Min){case-1:case
+ 0:switch(ast.Max){case-1: case 0:var idx=prog.Count;inst=new int[3];inst[0]=Jmp;prog.Add(inst);idx2=prog.Count;for(var i=0;i<ast.Exprs.Length;i++)if(null
+!=ast.Exprs[i])EmitPart(ast.Exprs[i],prog);inst[1]=idx2;jmp=new int[2];jmp[0]=Jmp;jmp[1]=idx;prog.Add(jmp);inst[2]=prog.Count;if(ast.IsLazy){ var t=inst[1];
+inst[1]=inst[2];inst[2]=t;}return;case 1: opt=new Ast();opt.Kind=Ast.Opt;opt.Exprs=ast.Exprs;opt.IsLazy=ast.IsLazy;EmitPart(opt,prog);return;default: opt
+=new Ast();opt.Kind=Ast.Opt;opt.Exprs=ast.Exprs;opt.IsLazy=ast.IsLazy;EmitPart(opt,prog);for(var i=1;i<ast.Max;++i){EmitPart(opt,prog);}return;}case 1:
+switch(ast.Max){ case-1:case 0:idx2=prog.Count;for(var i=0;i<ast.Exprs.Length;i++)if(null!=ast.Exprs[i])EmitPart(ast.Exprs[i],prog);inst=new int[3];inst[0]
+=Jmp;prog.Add(inst);inst[1]=idx2;inst[2]=prog.Count;if(ast.IsLazy){ var t=inst[1];inst[1]=inst[2];inst[2]=t;}return;case 1: for(var i=0;i<ast.Exprs.Length;
+i++)if(null!=ast.Exprs[i])EmitPart(ast.Exprs[i],prog);return;default: rep=new Ast();rep.Min=0;rep.Max=ast.Max-1;rep.IsLazy=ast.IsLazy;rep.Exprs=ast.Exprs;
 for(var i=0;i<ast.Exprs.Length;i++)if(null!=ast.Exprs[i])EmitPart(ast.Exprs[i],prog);EmitPart(rep,prog);return;}default: switch(ast.Max){ case-1:case 0:
 for(var j=0;j<ast.Min;++j){for(var i=0;i<ast.Exprs.Length;i++)if(null!=ast.Exprs[i])EmitPart(ast.Exprs[i],prog);}rep=new Ast();rep.Kind=Ast.Star;rep.Exprs
 =ast.Exprs;rep.IsLazy=ast.IsLazy;EmitPart(rep,prog);return;case 1: throw new NotImplementedException();default: for(var j=0;j<ast.Min;++j){for(var i=0;

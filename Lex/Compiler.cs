@@ -168,6 +168,7 @@ namespace L
 						inst[1] = inst[2];
 						inst[2] = t;
 					}
+
 					break;
 				// the next two forward to Rep
 				case Ast.Star:
@@ -190,7 +191,7 @@ namespace L
 					if (ast.Min > 0 && ast.Max > 0 && ast.Min > ast.Max)
 						throw new ArgumentOutOfRangeException("Max");
 					
-					int idx;
+					int idx2;
 					Ast opt;
 					Ast rep;
 					
@@ -200,18 +201,19 @@ namespace L
 						case 0:
 							switch (ast.Max)
 							{
-								// kleene * ex: (foo)*
-								case -1:
+								case -1: // kleene * ex: (foo)*
 								case 0:
-									
-									idx = prog.Count;
+									var idx = prog.Count;
 									inst = new int[3];
 									inst[0] = Jmp;
 									prog.Add(inst);
-									inst[1] = prog.Count;
+									idx2 = prog.Count;
+
 									for (var i = 0; i < ast.Exprs.Length; i++)
 										if (null != ast.Exprs[i])
 											EmitPart(ast.Exprs[i], prog);
+									inst[1] = idx2;
+
 									jmp = new int[2];
 									jmp[0] = Jmp;
 									jmp[1] = idx;
@@ -223,10 +225,8 @@ namespace L
 										inst[1] = inst[2];
 										inst[2] = t;
 									}
-									
 									return;
-									// opt ex: (foo)?
-								case 1:
+								case 1: // opt ex: (foo)?
 									opt = new Ast();
 									opt.Kind = Ast.Opt;
 									opt.Exprs = ast.Exprs;
@@ -251,14 +251,14 @@ namespace L
 								// plus ex: (foo)+
 								case -1:
 								case 0:
-									idx = prog.Count;
+									idx2 = prog.Count;
 									for (var i = 0; i < ast.Exprs.Length; i++)
 										if (null != ast.Exprs[i])
 											EmitPart(ast.Exprs[i], prog);
 									inst = new int[3];
 									inst[0] = Jmp;
 									prog.Add(inst);
-									inst[1] = idx;
+									inst[1] = idx2;
 									inst[2] = prog.Count;
 									if (ast.IsLazy)
 									{
