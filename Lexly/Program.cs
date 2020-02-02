@@ -1,4 +1,4 @@
-﻿//#define OPTIMIZE
+﻿#define OPTIMIZE
 using System;
 using System.CodeDom;
 using System.CodeDom.Compiler;

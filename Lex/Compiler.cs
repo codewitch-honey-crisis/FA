@@ -376,57 +376,20 @@ namespace L
 				var cfa = l[i];
 				if (!cfa.IsFinal)
 				{
+					
 					var sw = new List<int>();
 					sw.Add(Switch);
-					int[] simple = null;
-					if(1==cfa.InputTransitions.Count && 0==cfa.EpsilonTransitions.Count)
+					
+					var rngGrps = cfa.FillInputTransitionRangesGroupedByState();
+					foreach (var grp in rngGrps)
 					{
-						foreach(var trns in cfa.InputTransitions)
-						{
-							if (l.IndexOf(trns.Value)==i+1)
-							{
-								simple = new int[] { trns.Key.Key, trns.Key.Value };
-								break;
-							}
-						}
+						var dst = rendered[grp.Key];
+						sw.AddRange(grp.Value);
+						sw.Add(-1);
+						sw.Add(dst);
 					}
-					if (null!=simple)
-					{
-						if (2 < simple.Length || simple[0] != simple[1])
-						{
-							sw[0] = Set;
-							sw.AddRange(simple);
-						}
-						else
-						{
-							sw[0] = Char;
-							sw.Add(simple[0]);
-						}
 						
-
-					}
-					else
-					{
-						var rngGrps = cfa.FillInputTransitionRangesGroupedByState();
-						foreach (var grp in rngGrps)
-						{
-							var dst = rendered[grp.Key];
-							sw.AddRange(grp.Value);
-							sw.Add(-1);
-							sw.Add(dst);
-						}
-						/*
-						if (0 < cfa.InputTransitions.Count && 0 < cfa.EpsilonTransitions.Count)
-							sw.Add(-2);
-						else if (0 == cfa.InputTransitions.Count)
-							sw[0] = Jmp;
-						foreach (var efa in cfa.EpsilonTransitions)
-						{
-							var dst = rendered[efa];
-							sw.Add(dst);
-						}*/
-						
-					}
+					
 					prog[swFixups[cfa]] = sw.ToArray();
 				}
 				

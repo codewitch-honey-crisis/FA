@@ -228,12 +228,10 @@ opt.IsLazy=ast.IsLazy;rep=new Ast();rep.Kind=Ast.Rep;rep.Min=rep.Max=ast.Max-ast
  efa in fa.EpsilonTransitions){fa=efa;}}var rendered=new Dictionary<FA,int>();var swFixups=new Dictionary<FA,int>();var jmpFixups=new Dictionary<FA,int>();
 var l=new List<FA>();fa.FillClosure(l); var fas=fa.FirstAcceptingState;var afai=l.IndexOf(fas);l.RemoveAt(afai);l.Add(fas);for(int ic=l.Count,i=0;i<ic;++i)
 {var cfa=l[i];rendered.Add(cfa,prog.Count);if(!cfa.IsFinal){int swfixup=prog.Count;prog.Add(null);swFixups.Add(cfa,swfixup);}}for(int ic=l.Count,i=0;i<ic;++i)
-{var cfa=l[i];if(!cfa.IsFinal){var sw=new List<int>();sw.Add(Switch);int[]simple=null;if(1==cfa.InputTransitions.Count&&0==cfa.EpsilonTransitions.Count)
-{foreach(var trns in cfa.InputTransitions){if(l.IndexOf(trns.Value)==i+1){simple=new int[]{trns.Key.Key,trns.Key.Value};break;}}}if(null!=simple){if(2
-<simple.Length||simple[0]!=simple[1]){sw[0]=Set;sw.AddRange(simple);}else{sw[0]=Char;sw.Add(simple[0]);}}else{var rngGrps=cfa.FillInputTransitionRangesGroupedByState();
-foreach(var grp in rngGrps){var dst=rendered[grp.Key];sw.AddRange(grp.Value);sw.Add(-1);sw.Add(dst);}}prog[swFixups[cfa]]=sw.ToArray();}var jfi=-1;if(jmpFixups.TryGetValue(cfa,
-out jfi)){var jmp=new int[2];jmp[0]=Jmp;jmp[1]=prog.Count;prog[jfi]=jmp;}}}static void _EmitPart(FA fa,IDictionary<FA,int>rendered,IList<int[]>prog){if
-(fa.IsFinal)return;int swfixup=prog.Count;var sw=new List<int>();sw.Add(Switch);prog.Add(null);foreach(var trns in fa.InputTransitions){var dst=-1;if(!rendered.TryGetValue(trns.Value,out
+{var cfa=l[i];if(!cfa.IsFinal){var sw=new List<int>();sw.Add(Switch);var rngGrps=cfa.FillInputTransitionRangesGroupedByState();foreach(var grp in rngGrps)
+{var dst=rendered[grp.Key];sw.AddRange(grp.Value);sw.Add(-1);sw.Add(dst);}prog[swFixups[cfa]]=sw.ToArray();}var jfi=-1;if(jmpFixups.TryGetValue(cfa,out
+ jfi)){var jmp=new int[2];jmp[0]=Jmp;jmp[1]=prog.Count;prog[jfi]=jmp;}}}static void _EmitPart(FA fa,IDictionary<FA,int>rendered,IList<int[]>prog){if(fa.IsFinal)
+return;int swfixup=prog.Count;var sw=new List<int>();sw.Add(Switch);prog.Add(null);foreach(var trns in fa.InputTransitions){var dst=-1;if(!rendered.TryGetValue(trns.Value,out
  dst)){dst=prog.Count;rendered.Add(trns.Value,dst);_EmitPart(trns.Value,rendered,prog);}sw.Add(trns.Key.Key);sw.Add(trns.Key.Value);sw.Add(-1);sw.Add(dst);
 }if(0<fa.InputTransitions.Count&&0<fa.EpsilonTransitions.Count)sw.Add(-2);else if(0==fa.InputTransitions.Count)sw[0]=Jmp;foreach(var efa in fa.EpsilonTransitions)
 {var dst=-1;if(!rendered.TryGetValue(efa,out dst)){dst=prog.Count;rendered.Add(efa,dst);_EmitPart(efa,rendered,prog);}sw.Add(dst);}prog[swfixup]=sw.ToArray();

@@ -19,11 +19,11 @@ partialKeyword<id=484>= 'partial'
 voidType<id=483, terminal>= 'void'
 assemblyKeyword<id=482>= 'assembly'
 blockComment<id=481, terminal, blockEnd= "*/">= "/*"
-lineComment<id=480, terminal>= '//[^\n]*'
-directive<id=479, terminal>= '#[A-Za-z]+[ \t]*[^\n]*'
-colon<id=478>= ":"
-varType<id=477>= "var"
-semi<id=476>= ";"
+lineComment<id=480, terminal>= '\/\/[^\r\n]*'
+directive<id=479, terminal>= '#[A-Za-z]+[ \t]*[^\r\n]*'
+colon<id=478>= ':'
+varType<id=477>= 'var'
+semi<id=476>= '\;'
 finallyKeyword<id=475>= 'finally'
 catchKeyword<id=474>= 'catch'
 tryKeyword<id=473>= 'try'
@@ -34,10 +34,8 @@ forKeyword<id=469, terminal>= 'for'
 elseKeyword<id=468>= 'else'
 gotoKeyword<id=467>= 'goto'
 ifKeyword<id=466>= 'if'
-
-whitespace<id=465,hidden>= '( |\t|\r|\n|\v|\f)+'
-dot<id=462>= "."
-
+whitespace<id=465,hidden>= '[ \t\r\n\v\f]+'
+dot<id=462>= '\.'
 colonColon<id=461>= '::'
 comma<id=460>= ','
 rbrace<id=459>= '\}'
@@ -72,9 +70,9 @@ gt<id=431>= '\>'
 gte<id=430>= '\>='
 lt<id=429>= '\<'
 lte<id=428>= '\<='
-characterLiteral<id=427>= '[\']((\\([\'\\"abfnrtv0]|[0-7]{3}|x[0-9A-Fa-f]{2}|u[0-9A-Fa-f]{4}|U[0-9A-Fa-f]{8}))|[^\\\'])[\']'
+//characterLiteral<id=427>= '[\']((\\([\'\\"abfnrtv0]|[0-7]{3}|x[0-9A-Fa-f]{2}|u[0-9A-Fa-f]{4}|U[0-9A-Fa-f]{8}))|[^\\\'])[\']'
+characterLiteral<id=427>= '[\']([^\']|\\.)[\']'
 //stringLiteral<id=426>= '"((\\([\'\\"abfnrtv0]|[0-7]{3}|x[0-9A-Fa-f]{2}|u[0-9A-Fa-f]{4}|U[0-9A-Fa-f]{8}))|[^\\"])*"'
-
 stringLiteral<id=426>= '"([^"]|\\.)*"'
 //stringLiteral<id=426>= '"([^\\"\'\a\b\f\n\r\t\v\0]|\\[^\r\n]|\\[0-7]{3}|\\x[0-9A-Fa-f]{2}|\\u[0-9A-Fa-f]{4}|\\U[0-9A-Fa-f]{8})*"'
 verbatimStringLiteral<id=424>= '@"([^"]|"")*"'
@@ -103,7 +101,7 @@ defaultOf<id=402>= 'default'
 typeOf<id=401>= 'typeof'
 refKeyword<id=400>= 'ref'
 outKeyword<id=399>= 'out'
-//verbatimIdentifier<id=398>= '@(_|[[:IsLetter:]])(_|[[:IsLetterOrDigit:]]*)'
+//verbatimIdentifier<id=398>= '@(_|[[:IsLetter:]])(_|[[:IsLetterOrDigit:]])*'
 verbatimIdentifier<id=398>= '@[A-Z_a-z][0-9A-Z_a-z]*'
 usingKeyword<id=397, terminal>= 'using'
 namespaceKeyword<id=396, terminal>= 'namespace'
@@ -111,3 +109,5 @@ integerLiteral<id=463, priority= -50>= '(0x[0-9A-Fa-f]{1,16}|([0-9]+))([Uu][Ll]?
 floatLiteral<id=464, priority= -51>= '(([0-9]+)(\.[0-9]+)?([Ee][+-]?[0-9]+)?[DdMmFf]?)|((\.[0-9]+)([Ee][+-]?[0-9]+)?[DdMmFf]?)'
 //identifier<id=425, priority= -100>= '(_|[[:IsLetter:]])(_|[[:IsLetterOrDigit:]])*'
 identifier<id=425, priority= -100>= '[A-Z_a-z][0-9A-Z_a-z]*'
+
+
