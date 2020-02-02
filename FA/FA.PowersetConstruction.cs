@@ -41,7 +41,11 @@ namespace F
 {
 	partial class FA
 	{
-
+        /// <summary>
+        /// Performs powerset construction on this NFA to transform it into an equivelent DFA
+        /// </summary>
+        /// <param name="progress">The progress of the operation</param>
+        /// <returns>A new FSM that is deterministic</returns>
         public FA ToDfa(IProgress<FAProgress> progress = null)
         {
             return _Determinize(this,progress);

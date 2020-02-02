@@ -1,0 +1,11 @@
+﻿; lex identifier
+save 0
+set "A".."Z", "_", "a".."z"
+loop: 
+jmp idpart, done
+idpart: 
+set "0".."9", "A".."Z", "_", "a".."z"
+jmp loop
+done: 
+save 1
+match 0

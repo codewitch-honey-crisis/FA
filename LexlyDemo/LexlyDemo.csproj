@@ -4,10 +4,10 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{42203212-8CAA-4438-B564-8DF1543143B3}</ProjectGuid>
+    <ProjectGuid>{06B39ACD-EB4E-480E-A153-14851E16F5D7}</ProjectGuid>
     <OutputType>Exe</OutputType>
-    <RootNamespace>Rolex</RootNamespace>
-    <AssemblyName>rolex</AssemblyName>
+    <RootNamespace>LexlyDemo</RootNamespace>
+    <AssemblyName>LexlyDemo</AssemblyName>
     <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
@@ -32,45 +32,33 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
-  <PropertyGroup>
-    <SignAssembly>true</SignAssembly>
-  </PropertyGroup>
-  <PropertyGroup>
-    <AssemblyOriginatorKeyFile>Key.snk</AssemblyOriginatorKeyFile>
-  </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
-    <Reference Include="System.Numerics" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="CodeDomUtility.cs" />
-    <Compile Include="CodeDomVisitor.cs" />
-    <Compile Include="CodeGenerator.cs" />
-    <Compile Include="FA.brick.cs" />
-    <Compile Include="LexContext.brick.cs" />
-    <Compile Include="PrototypeTokenizer.cs" />
-    <Compile Include="Token.cs" />
-    <Content Include="Export\PrototypeTokenizerTemplate.cs" />
-    <Content Include="Export\TableTokenizer.cs" />
-    <Content Include="Export\TableTokenizerTemplate.cs" />
-    <Content Include="Export\Token.cs" />
-    <Compile Include="Deslanged.cs" />
-    <Compile Include="LexRule.cs" />
+    <Compile Include="ExampleTokenizer.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SlangTokenizer.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
-    <None Include="Example.rl" />
-    <None Include="Key.snk" />
+    <None Include="Example.lx" />
+    <None Include="Slang.lx" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\LexContext\LexContext.csproj">
+      <Project>{240ac77d-3deb-4415-842b-8c0226d42593}</Project>
+      <Name>LexContext</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Lex\Lex.csproj">
+      <Project>{596d1001-ce23-4268-8ebf-f267131a8430}</Project>
+      <Name>Lex</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PreBuildEvent>"$(SolutionDir)csbrick.exe" "$(SolutionDir)FA\FA.csproj" /output "$(ProjectDir)FA.brick.cs"
-"$(SolutionDir)csbrick.exe" "$(SolutionDir)LexContext\LexContext.csproj" /output "$(ProjectDir)LexContext.brick.cs"
-"$(SolutionDir)deslang.exe" "$(ProjectDir)Export\PrototypeTokenizerTemplate.cs" "$(ProjectDir)Export\TableTokenizer.cs" "$(ProjectDir)Export\TableTokenizerTemplate.cs" "$(ProjectDir)Export\Token.cs" /output "$(ProjectDir)Deslanged.cs" /namespace Rolex /ifstale</PreBuildEvent>
-  </PropertyGroup>
-  <PropertyGroup>
-    <PostBuildEvent>copy "$(TargetPath)" "$(SolutionDir)"</PostBuildEvent>
+    <PreBuildEvent>"$(SolutionDir)Lexly.exe" "$(ProjectDir)Example.lx" /output "$(ProjectDir)ExampleTokenizer.cs" /namespace LexlyDemo
+"$(SolutionDir)Lexly.exe" "$(ProjectDir)Slang.lx" /output "$(ProjectDir)SlangTokenizer.cs" /namespace LexlyDemo /noshared</PreBuildEvent>
   </PropertyGroup>
 </Project>

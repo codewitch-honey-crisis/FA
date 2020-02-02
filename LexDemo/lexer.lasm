@@ -1,0 +1,36 @@
+﻿; simple lexer example by codewitch honey crisis
+save 0
+jmp id, int, space, error
+
+id: ; [A-Z_a-z][0-9A-Z_a-z]*
+set "A".."Z", "_", "a".."z"
+id_loop: jmp id_part, id_done
+id_part: set "0".."9", "A".."Z", "_", "a".."z"
+jmp id_loop
+id_done: save 1
+match 0
+
+int: ; (0|\-?[1-9][0-9]*)
+jmp int_zero, int_nonzero
+int_zero:
+char "0"
+jmp int_done
+int_nonzero: jmp int_neg, int_pos
+int_neg: char "-"
+int_pos: set "1".."9"
+int_loop: 
+jmp int_part, int_done
+int_part: set "0".."9"
+jmp int_loop
+int_done: save 1
+match 1
+
+space: ; (\t|\n|\v|\f|\r| )
+set "\t", "\n", "\v", "\f", "\r", " "
+save 1
+match 2
+
+error: ; anything not caught above returns -1
+any
+save 1
+match -1

@@ -5,13 +5,13 @@ using System.Text;
 
 namespace F
 {
-	partial class CharCls
+	partial class CharacterClasses
 	{
-		static Lazy<IDictionary<string, int[]>> _CharacterClasses = new Lazy<IDictionary<string, int[]>>(_GetCharacterClasses);
-		static IDictionary<string,int[]> _GetCharacterClasses()
+		static Lazy<IDictionary<string, int[]>> _Known = new Lazy<IDictionary<string, int[]>>(_GetKnown);
+		static IDictionary<string,int[]> _GetKnown()
 		{
 			var result = new Dictionary<string, int[]>();
-			var fa = typeof(CharCls).GetFields();
+			var fa = typeof(CharacterClasses).GetFields();
 			for (var i = 0; i < fa.Length; i++)
 			{
 				var f = fa[i];
@@ -23,6 +23,6 @@ namespace F
 			}
 			return result;
 		}
-		public static IDictionary<string,int[]> CharacterClasses {  get { return _CharacterClasses.Value; } }
+		public static IDictionary<string,int[]> Known {  get { return _Known.Value; } }
 	}
 }

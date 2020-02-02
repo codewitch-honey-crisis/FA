@@ -73,10 +73,7 @@ namespace LC
 	/// <summary>
 	/// Provides error reporting, location tracking, lifetime and start/end management over an input cursor
 	/// </summary>
-#if LCLIB
-	public 
-#endif
-	abstract partial class LexContext : IDisposable
+	public abstract partial class LexContext : IDisposable
 	{
 		/// <summary>
 		/// Indicates the default tab width of an input device

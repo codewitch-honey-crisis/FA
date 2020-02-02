@@ -10,7 +10,7 @@
 
 namespace F {
     
-    internal partial class CharCls {
+    public partial class CharacterClasses {
         public static int[][] UnicodeCategories = new int[][] {
                 new int[] {
                         65,
@@ -19149,8 +19149,8 @@ namespace F {
                 183969,
                 194560,
                 195101};
-        public static int[] cntrl = CharCls.UnicodeCategories[14];
-        public static int[] digit = CharCls.UnicodeCategories[8];
+        public static int[] cntrl = CharacterClasses.UnicodeCategories[14];
+        public static int[] digit = CharacterClasses.UnicodeCategories[8];
         public static int[] graph = new int[] {
                 33,
                 126,
@@ -19190,8 +19190,8 @@ namespace F {
                 8287,
                 12288,
                 12288};
-        public static int[] lower = CharCls.UnicodeCategories[1];
-        public static int[] print = CharCls.NotUnicodeCategories[14];
+        public static int[] lower = CharacterClasses.UnicodeCategories[1];
+        public static int[] print = CharacterClasses.NotUnicodeCategories[14];
         public static int[] punct = new int[] {
                 41,
                 41,
@@ -20023,8 +20023,8 @@ namespace F {
                 121479,
                 121483,
                 121483};
-        public static int[] space = CharCls.IsWhiteSpace;
-        public static int[] upper = CharCls.UnicodeCategories[0];
+        public static int[] space = CharacterClasses.IsWhiteSpace;
+        public static int[] upper = CharacterClasses.UnicodeCategories[0];
         public static int[] word = new int[] {
                 65,
                 90,

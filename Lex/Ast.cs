@@ -1,22 +1,90 @@
-﻿using LC;
+﻿using F;
 using System;
 using System.Collections.Generic;
 using System.Text;
-
-namespace F
+using LC;
+namespace L
 {
-	partial class FA
+	sealed class Ast
 	{
-		public static FA Parse(IEnumerable<char> input,int accept=-1,int line=1,int column=1,long position=0,string fileOrUrl=null)
+		#region Kinds
+		public const int None = 0;
+		public const int Lit = 1;
+		public const int Set = 2;
+		public const int NSet = 3;
+		public const int Cls = 4;
+		public const int Cat = 5;
+		public const int Opt = 6;
+		public const int Alt = 7;
+		public const int Star = 8;
+		public const int Plus = 9;
+		public const int Rep = 10;
+		public const int UCode = 11;
+		public const int NUCode = 12;
+		internal const int Dot = 13;
+		#endregion Kinds
+
+		public int Kind = None;
+		public bool IsLazy = false;
+		public Ast[] Exprs = null;
+		
+		public int Value = '\0';
+		public int[] Ranges;
+		public int Min = 0;
+		public int Max = 0;
+		static FA[] _ToFAs(Ast[] asts, int match = 0)
 		{
-			var lc = LexContext.Create(input);
-			lc.EnsureStarted();
-			lc.SetLocation(line, column, position, fileOrUrl);
-			return Parse(lc, accept);
+			var result = new FA[asts.Length];
+			for (var i = 0; i < result.Length; i++)
+				result[i] = asts[i].ToFA(match);
+			return result;
 		}
-		internal static FA Parse(LexContext pc,int accept = -1)
+		public FA ToFA(int match = 0)
 		{
-			FA result = null, next = null;
+			Ast ast = this;
+			if (ast.IsLazy)
+				throw new NotSupportedException("The AST node cannot be lazy");
+			switch (ast.Kind)
+			{
+				case Ast.Alt:
+					return FA.Or(_ToFAs(ast.Exprs, match), match);
+				case Ast.Cat:
+					if (1 == ast.Exprs.Length)
+						return ast.Exprs[0].ToFA(match);
+					return FA.Concat(_ToFAs(ast.Exprs, match), match);
+				case Ast.Dot:
+					return FA.Set(new int[] { 0, 0xd7ff, 0xe000, 0x10ffff }, match);
+				case Ast.Lit:
+					return FA.Literal(new int[] { ast.Value }, match);
+				case Ast.NSet:
+					var pairs = RangeUtility.ToPairs(ast.Ranges);
+					RangeUtility.NormalizeRangeList(pairs);
+					var pairl = new List<KeyValuePair<int, int>>(RangeUtility.NotRanges(pairs));
+					return FA.Set(RangeUtility.FromPairs(pairl), match);
+				case Ast.NUCode:
+					pairs = RangeUtility.ToPairs(CharacterClasses.UnicodeCategories[ast.Value]);
+					RangeUtility.NormalizeRangeList(pairs);
+					pairl = new List<KeyValuePair<int, int>>(RangeUtility.NotRanges(pairs));
+					return FA.Set(RangeUtility.FromPairs(pairl), match);
+				case Ast.Opt:
+					return FA.Optional(ast.Exprs[0].ToFA(), match);
+				case Ast.Plus:
+					return FA.Repeat(ast.Exprs[0].ToFA(), 1, 0, match);
+				case Ast.Rep:
+					return FA.Repeat(ast.Exprs[0].ToFA(), ast.Min, ast.Max, match);
+				case Ast.Set:
+					return FA.Set(ast.Ranges, match);
+				case Ast.Star:
+					return FA.Repeat(ast.Exprs[0].ToFA(), 0, 0, match);
+				case Ast.UCode:
+					return FA.Set(CharacterClasses.UnicodeCategories[ast.Value], match);
+				default:
+					throw new NotImplementedException();
+			}
+		}
+		internal static Ast Parse(LexContext pc)
+		{
+			Ast result = null, next = null;
 			int ich;
 			pc.EnsureStarted();
 			while (true)
@@ -26,15 +94,29 @@ namespace F
 					case -1:
 						return result;
 					case '.':
-						var dot = FA.Set(new int[] { 0, 0x10ffff },accept);
+						var dot = new Ast();
+						dot.Kind = Ast.Dot;
 						if (null == result)
 							result = dot;
 						else
 						{
-							result = FA.Concat(new FA[] { result, dot },accept);
+							if (Ast.Cat == result.Kind)
+							{
+								var exprs = new Ast[result.Exprs.Length + 1];
+								Array.Copy(result.Exprs, 0, exprs, 0, result.Exprs.Length);
+								exprs[exprs.Length - 1] = dot;
+								result.Exprs = exprs;
+							}
+							else
+							{
+								var cat = new Ast();
+								cat.Kind = Ast.Cat;
+								cat.Exprs = new Ast[] { result, dot };
+								result = cat;
+							}
 						}
 						pc.Advance();
-						result = _ParseModifier(result, pc,accept);
+						result = _ParseModifier(result, pc);
 						break;
 					case '\\':
 
@@ -58,7 +140,7 @@ namespace F
 								pc.Expecting('}');
 								pc.Advance();
 								int uci = 0;
-								switch (uc.ToString())
+								switch(uc.ToString())
 								{
 									case "Pe":
 										uci = 21;
@@ -151,42 +233,53 @@ namespace F
 										uci = 0;
 										break;
 								}
-								if(isNot)
-								{
-									next = FA.Set(CharacterClasses.UnicodeCategories[uci], accept);
-								} else
-									next = FA.Set(CharacterClasses.NotUnicodeCategories[uci], accept);
+								next = new Ast();
+								next.Value = uci;
+								next.Kind=isNot?Ast.NUCode:Ast.UCode;
 								break;
 							case 'd':
-								next = FA.Set(CharacterClasses.digit, accept);
+								next = new Ast();
+								next.Kind = Ast.Set;
+								next.Ranges = new int[] { '0', '9' };
 								pc.Advance();
 								break;
 							case 'D':
-								next = FA.Set(RangeUtility.NotRanges(CharacterClasses.digit), accept);
+								next = new Ast();
+								next.Kind = Ast.NSet;
+								next.Ranges = new int[] { '0', '9' };
 								pc.Advance();
 								break;
-
+							
 							case 's':
-								next = FA.Set(CharacterClasses.space,accept);
+								next = new Ast();
+								next.Kind = Ast.Set;
+								next.Ranges = new int[] { '\t', '\t', ' ', ' ', '\r', '\r', '\n', '\n', '\f', '\f' };
 								pc.Advance();
 								break;
 							case 'S':
-								next = FA.Set(RangeUtility.NotRanges(CharacterClasses.space),accept);
+								next = new Ast();
+								next.Kind = Ast.NSet;
+								next.Ranges = new int[] { '\t', '\t', ' ', ' ', '\r', '\r', '\n', '\n', '\f', '\f' };
 								pc.Advance();
 								break;
 							case 'w':
-								next = FA.Set(CharacterClasses.word,accept);
+								next = new Ast();
+								next.Kind = Ast.Set;
+								next.Ranges = new int[] { '_', '_', '0', '9', 'A', 'Z', 'a', 'z', };
 								pc.Advance();
 								break;
 							case 'W':
-								next = FA.Set(RangeUtility.NotRanges(CharacterClasses.word),accept);
+								next = new Ast();
+								next.Kind = Ast.NSet;
+								next.Ranges = new int[] { '_', '_', '0', '9', 'A', 'Z', 'a', 'z', };
 								pc.Advance();
 								break;
 							default:
 								if (-1 != (ich = _ParseEscapePart(pc)))
 								{
-									next = FA.Literal(new int[] { ich },accept);
-									
+									next = new Ast();
+									next.Kind = Ast.Lit;
+									next.Value = ich;
 								}
 								else
 								{
@@ -195,10 +288,23 @@ namespace F
 								}
 								break;
 						}
-						next = _ParseModifier(next, pc,accept);
+						next = _ParseModifier(next, pc);
 						if (null != result)
 						{
-							result = FA.Concat(new FA[] { result, next },accept);
+							if (Ast.Cat == result.Kind)
+							{
+								var exprs = new Ast[result.Exprs.Length + 1];
+								Array.Copy(result.Exprs, 0, exprs, 0, result.Exprs.Length);
+								exprs[exprs.Length - 1] = next;
+								result.Exprs = exprs;
+							}
+							else
+							{
+								var cat = new Ast();
+								cat.Kind = Ast.Cat;
+								cat.Exprs = new Ast[] { result, next};
+								result = cat;
+							}
 						}
 						else
 							result = next;
@@ -211,57 +317,139 @@ namespace F
 						next = Parse(pc);
 						pc.Expecting(')');
 						pc.Advance();
-						next = _ParseModifier(next, pc,accept);
+						next = _ParseModifier(next, pc);
 						if (null == result)
 							result = next;
 						else
 						{
-							result = FA.Concat(new FA[] { result, next }, accept);
+							if (Ast.Cat == result.Kind)
+							{
+								var exprs = new Ast[result.Exprs.Length + 1];
+								Array.Copy(result.Exprs, 0, exprs, 0, result.Exprs.Length);
+								exprs[exprs.Length - 1] = next;
+								result.Exprs = exprs;
+							}
+							else
+							{
+								var cat = new Ast();
+								cat.Kind = Ast.Cat;
+								cat.Exprs = new Ast[] { result, next };
+								result = cat;
+							}
 						}
 						break;
 					case '|':
 						if (-1 != pc.Advance())
 						{
 							next = Parse(pc);
-							result = FA.Or(new FA[] { result, next }, accept);
+							if (null!=result && Ast.Lit == result.Kind && Ast.Lit == next.Kind)
+							{
+								var set = new Ast();
+								set.Kind = Set;
+								set.Ranges = new int[] { result.Value, result.Value, next.Value, next.Value };
+								result = set;
+							}
+							else if (null != result && Ast.Lit == result.Kind && Ast.Set == next.Kind)
+							{
+								var set = new Ast();
+								set.Kind = Ast.Set;
+								set.Ranges = new int[next.Ranges.Length + 2];
+								set.Ranges[0] = result.Value;
+								set.Ranges[1] = result.Value;
+								Array.Copy(next.Ranges, 0, set.Ranges, 2, next.Ranges.Length);
+								result = set;
+							} else if(null!=result && Ast.Alt==result.Kind)
+							{
+								var exprs = new Ast[result.Exprs.Length + 1];
+								Array.Copy(result.Exprs, 0, exprs, 0, result.Exprs.Length);
+								exprs[exprs.Length - 1] = next;
+								result.Exprs = exprs;
+							}
+							else { 
+								var alt = new Ast();
+								alt.Kind = Ast.Alt;
+								if (null == next || next.Kind != Alt)
+								{
+									alt.Exprs = new Ast[] { result, next };
+									result = alt;
+								} else
+								{
+									var exprs = new Ast[1 + next.Exprs.Length];
+									Array.Copy(next.Exprs, 0, exprs, 1, next.Exprs.Length);
+									exprs[0] = result;
+									alt.Exprs = exprs;
+									result = alt;
+								}
+							}
 						}
 						else
 						{
-							result = FA.Optional(result, accept);
+							var opt = new Ast();
+							opt.Kind = Ast.Opt;
+							opt.Exprs = new Ast[] { result };
+							result = opt;
 						}
 						break;
 					case '[':
 						var seti = _ParseSet(pc);
-						var set = seti.Value;
-						if(seti.Key)
-							set = RangeUtility.NotRanges(set);
-						next = FA.Set(set, accept);
-						next = _ParseModifier(next, pc,accept);
+						
+						next = new Ast();
+						next.Kind = (seti.Key)?NSet:Set;
+						next.Ranges = seti.Value;
+						next = _ParseModifier(next, pc);
 
 						if (null == result)
 							result = next;
 						else
 						{
-							result = FA.Concat(new FA[] { result, next }, accept);
-
+							if (Ast.Cat == result.Kind)
+							{
+								var exprs = new Ast[result.Exprs.Length + 1];
+								Array.Copy(result.Exprs, 0, exprs, 0, result.Exprs.Length);
+								exprs[exprs.Length - 1] = next;
+								result.Exprs = exprs;
+							}
+							else
+							{
+								var cat = new Ast();
+								cat.Kind = Ast.Cat;
+								cat.Exprs = new Ast[] { result, next };
+								result = cat;
+							}
+							
 						}
 						break;
 					default:
 						ich = pc.Current;
-						if (char.IsHighSurrogate((char)ich))
+						if(char.IsHighSurrogate((char)ich))
 						{
 							if (-1 == pc.Advance())
 								throw new ExpectingException("Expecting low surrogate in Unicode stream", pc.Line, pc.Column, pc.Position, pc.FileOrUrl, "low-surrogate");
 							ich = char.ConvertToUtf32((char)ich, (char)pc.Current);
 						}
-						next = FA.Literal(new int[] { ich }, accept);
+						next = new Ast();
+						next.Kind = Ast.Lit;
+						next.Value = ich;
 						pc.Advance();
-						next = _ParseModifier(next, pc,accept);
+						next = _ParseModifier(next, pc);
 						if (null == result)
 							result = next;
 						else
 						{
-							result = FA.Concat(new FA[] { result, next }, accept);
+							if (Ast.Cat == result.Kind)
+							{
+								var exprs = new Ast[result.Exprs.Length + 1];
+								Array.Copy(result.Exprs, 0, exprs, 0, result.Exprs.Length);
+								exprs[exprs.Length - 1] = next;
+								result.Exprs = exprs;
+							}
+							else
+							{
+								var cat = new Ast();
+								cat.Kind = Ast.Cat;
+								cat.Exprs = new Ast[] { result, next };
+								result = cat;
+							}
 						}
 						break;
 				}
@@ -313,10 +501,7 @@ namespace F
 							pc.Expecting(']');
 							pc.Advance();
 							var cls = pc.GetCapture(ll);
-							int[] ranges;
-							if (!CharacterClasses.Known.TryGetValue(cls, out ranges))
-								throw new ExpectingException("Unknown character class \"" + cls + "\" specified", pc.Line, pc.Column, pc.Position, pc.FileOrUrl);
-							result.AddRange(ranges);
+							result.AddRange(Lex.GetCharacterClass(cls));
 							readFirstChar = false;
 							wantRange = false;
 							firstRead = false;
@@ -346,7 +531,7 @@ namespace F
 							pc.Expecting();
 						}
 						readFirstChar = true;
-
+						
 					}
 					else
 					{
@@ -383,8 +568,7 @@ namespace F
 						pc.Expecting();
 						result.Add(firstChar);
 						result.Add(ch);
-					}
-					else
+					} else
 					{
 						result.Add(firstChar);
 						pc.Advance();
@@ -447,7 +631,7 @@ namespace F
 						{
 							var sa = new string[CharacterClasses.Known.Count];
 							CharacterClasses.Known.Keys.CopyTo(sa, 0);
-							throw new ExpectingException("Invalid character class " + n, lin, col, pos, pc.FileOrUrl, sa);
+							throw new ExpectingException("Invalid character class " + n, lin, col, pos, pc.FileOrUrl,sa);
 						}
 						result.AddRange(rngs);
 						readDash = false;
@@ -517,7 +701,7 @@ namespace F
 						{
 							if (readDash)
 								result.AddRange(next);
-
+							
 							readDash = true;
 						}
 						break;
@@ -556,7 +740,7 @@ namespace F
 			}
 			return result.ToArray();
 		}
-
+		
 		static void _ParseCharClassEscape(LexContext pc, string cls, List<int> result, ref int[] next, ref bool readDash)
 		{
 			if (null != next)
@@ -583,7 +767,7 @@ namespace F
 			readDash = false;
 		}
 
-		static FA _ParseModifier(FA expr, LexContext pc,int accept)
+		static Ast _ParseModifier(Ast expr, LexContext pc)
 		{
 			var line = pc.Line;
 			var column = pc.Column;
@@ -591,16 +775,40 @@ namespace F
 			switch (pc.Current)
 			{
 				case '*':
-					expr = Repeat(expr,0,0,accept);
+					var rep = new Ast();
+					rep.Kind = Ast.Star;
+					rep.Exprs = new Ast[] { expr };
+					expr = rep;
 					pc.Advance();
+					if ('?' == pc.Current)
+					{
+						rep.IsLazy = true;
+						pc.Advance();
+					}
 					break;
 				case '+':
-					expr = Repeat(expr, 1, 0, accept);
+					rep = new Ast();
+					rep.Kind = Ast.Plus;
+					rep.Exprs = new Ast[] { expr };
+					expr = rep;
 					pc.Advance();
+					if ('?' == pc.Current)
+					{
+						rep.IsLazy = true;
+						pc.Advance();
+					}
 					break;
 				case '?':
-					expr = Optional(expr, accept);
+					var opt = new Ast();
+					opt.Kind = Ast.Opt;
+					opt.Exprs = new Ast[] { expr };
+					expr = opt;
 					pc.Advance();
+					if ('?' == pc.Current)
+					{
+						opt.IsLazy = true;
+						pc.Advance();
+					}
 					break;
 				case '{':
 					pc.Advance();
@@ -631,7 +839,17 @@ namespace F
 					else { max = min; }
 					pc.Expecting('}');
 					pc.Advance();
-					expr = Repeat(expr, min, max, accept);
+					rep = new Ast();
+					rep.Exprs = new Ast[] { expr };
+					rep.Kind = Ast.Rep;
+					rep.Min = min;
+					rep.Max = max;
+					expr = rep;
+					if ('?' == pc.Current)
+					{
+						rep.IsLazy = true;
+						pc.Advance();
+					}
 					break;
 			}
 			return expr;
@@ -714,7 +932,7 @@ namespace F
 				default:
 					int i = pc.Current;
 					pc.Advance();
-					if (char.IsHighSurrogate((char)i))
+					if(char.IsHighSurrogate((char)i))
 					{
 						i = char.ConvertToUtf32((char)i, (char)pc.Current);
 						pc.Advance();
