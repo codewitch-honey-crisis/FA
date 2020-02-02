@@ -8,7 +8,7 @@ namespace F
 	/// Represents a single token returned from the <see cref="Tokenizer"/>'s <see cref="TokenEnumerator"/>
 	/// A token contains the symbol, the value, and the location information for each lexeme returned from a lexer/tokenizer
 	/// </summary>
-#if FLIB
+#if FALIB
 	public
 #endif
 	struct Token

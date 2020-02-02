@@ -11,7 +11,7 @@ namespace F
 	/// the symbol for each matched chunk, along with the matching value and location information. It's a regex runner.
 	/// </summary>
 	/// <remarks>The heavy lifting here is done by the <see cref="TokenEnumerator"/> class. This just provides a for-each interface over the tokenization process.</remarks>
-#if FLIB
+#if FALIB
 		public
 #endif
 	class Tokenizer : IEnumerable<Token>

@@ -182,7 +182,7 @@ namespace Rolex
 						if (!prototype)
 						{
 							fa = fa.ToDfa(new ConsoleProgress(stderr));
-							//fa.TrimDuplicates(new _ConsoleProgress(stderr));
+							fa.TrimDuplicates(new ConsoleProgress(stderr));
 							if (null != dfagraph)
 							{
 								fa.RenderToFile(dfagraph);
@@ -196,11 +196,8 @@ namespace Rolex
 						NfaEntry[] nfaTable = null;
 						if (!prototype)
 						{
-							fa = fa.ToDfa(new ConsoleProgress(stderr));
-							fa.TrimDuplicates(new ConsoleProgress(stderr));
-							dfaTable = _ToDfaStateTable(fa,symids);
+							dfaTable = fa.ToDfaStateTable(symids);
 						}
-							
 						else
 						{
 							nfaTable = _ToNfaStateTable(fa, symids);
@@ -495,61 +492,7 @@ namespace Rolex
 			}
 			return result;
 		}
-		static DfaEntry[] _ToDfaStateTable(FA dfa,IList<int> symbolTable = null)
-		{
-			var closure = new List<FA>();
-			dfa.FillClosure(closure);
-			var symbolLookup = new Dictionary<int, int>();
-			// if we don't have a symbol table, build 
-			// the symbol lookup from the states.
-			if (null == symbolTable)
-			{
-				// go through each state, looking for accept symbols
-				// and then add them to the new symbol table is we
-				// haven't already
-				var i = 0;
-				for (int jc = closure.Count, j = 0; j < jc; ++j)
-				{
-					var fa = closure[j];
-					if (fa.IsAccepting && !symbolLookup.ContainsKey(fa.AcceptSymbol))
-					{
-						symbolLookup.Add(fa.AcceptSymbol, i);
-						++i;
-					}
-				}
-			}
-			else // build the symbol lookup from the symbol table
-				for (int ic = symbolTable.Count, i = 0; i < ic; ++i)
-					symbolLookup.Add(symbolTable[i], i);
-
-			// build the root array
-			var result = new DfaEntry[closure.Count];
-			for (var i = 0; i < result.Length; i++)
-			{
-				var fa = closure[i];
-				// get all the transition ranges for each destination state
-				var trgs = fa.FillInputTransitionRangesGroupedByState();
-				// make a new transition entry array for our DFA state table
-				var trns = new DfaTransitionEntry[trgs.Count];
-				var j = 0;
-				// for each transition range
-				foreach (var trg in trgs)
-				{
-					// add the transition entry using
-					// the packed ranges from CharRange
-					trns[j] = new DfaTransitionEntry(
-						trg.Value,
-						closure.IndexOf(trg.Key));
-
-					++j;
-				}
-				// now add the state entry for the state above
-				result[i] = new DfaEntry(
-					fa.IsAccepting ? symbolLookup[fa.AcceptSymbol] : -1, trns);
-
-			}
-			return result;
-		}
+		
 		static NfaEntry[] _ToNfaStateTable(FA fa, IList<int> symbolTable = null)
 		{
 			var closure = new List<FA>();

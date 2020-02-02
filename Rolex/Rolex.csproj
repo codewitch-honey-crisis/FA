@@ -49,7 +49,6 @@
     <Compile Include="FA.brick.cs" />
     <Compile Include="PrototypeTokenizer.cs" />
     <Compile Include="Token.cs" />
-    <Compile Include="UnicodeUtility.cs" />
     <Content Include="Export\PrototypeTokenizerTemplate.cs" />
     <Content Include="Export\TableTokenizer.cs" />
     <Content Include="Export\TableTokenizerTemplate.cs" />

@@ -3,6 +3,9 @@ using System.IO;
 
 namespace F
 {
+#if FALIB
+	public
+#endif
 	static class UnicodeUtility
 	{
 		public static IEnumerable<int> ToUtf32(IEnumerable<char> @string)

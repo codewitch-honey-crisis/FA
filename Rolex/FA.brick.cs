@@ -810,7 +810,7 @@ class DfaEntryConverter:TypeConverter{ public override bool CanConvertTo(ITypeDe
 /// Represents an entry in a DFA state table
 /// </summary>
 [TypeConverter(typeof(DfaEntryConverter))]
-#if FLIB
+#if FALIB
 public
 #endif
 struct DfaEntry{/// <summary>
@@ -845,7 +845,7 @@ public int[]PackedRanges;/// <summary>
 /// Indicates the destination state id
 /// </summary>
 public int Destination;}}namespace F{
-#if FLIB
+#if FALIB
 public
 #endif
 sealed partial class FA{public readonly Dictionary<KeyValuePair<int,int>,FA>InputTransitions=new Dictionary<KeyValuePair<int,int>,FA>();public readonly
@@ -928,7 +928,7 @@ trns.Value);f=f.ToLowerInvariant();l=l.ToLowerInvariant();fa.InputTransitions.Ad
 /// Indicates whether or not this state machine is a DFA
 /// </summary>
 public bool IsDfa{get{ foreach(var fa in FillClosure())if(0!=fa.EpsilonTransitions.Count)return false;return true;}}/// <summary>
-/// Fills a collection with the result of moving each of the specified <paramref name="states"/> by the specified input.
+/// Fills a collection with the result of moving each of the specified <paramref name="states"/> on the specified input.
 /// </summary>
 /// <param name="states">The states to examine</param>
 /// <param name="input">The input to use</param>
@@ -1077,34 +1077,39 @@ builder.Append("\\v");return;case'\b':builder.Append("\\b");return;default:var s
 else{builder.Append("\\U");builder.Append(rangeChar.ToString("x8"));}}else builder.Append(s);break;}}static string _EscapeLabel(string label){if(string.IsNullOrEmpty(label))
 return label;string result=label.Replace("\\",@"\\");result=result.Replace("\"","\\\"");result=result.Replace("\n","\\n");result=result.Replace("\r","\\r");
 result=result.Replace("\0","\\0");result=result.Replace("\v","\\v");result=result.Replace("\t","\\t");result=result.Replace("\f","\\f");return result;
-}}}namespace F{partial class FA{public static FA Parse(IEnumerable<char>input,int accept=-1,int line=1,int column=1,long position=0,string fileOrUrl=null)
-{var lc=LexContext.Create(input);lc.EnsureStarted();lc.SetLocation(line,column,position,fileOrUrl);return Parse(lc,accept);}internal static FA Parse(LexContext
- pc,int accept=-1){FA result=null,next=null;int ich;pc.EnsureStarted();while(true){switch(pc.Current){case-1:return result;case'.':var dot=FA.Set(new int[]
-{0,0x10ffff},accept);if(null==result)result=dot;else{result=FA.Concat(new FA[]{result,dot},accept);}pc.Advance();result=_ParseModifier(result,pc,accept);
-break;case'\\':pc.Advance();pc.Expecting();var isNot=false;switch(pc.Current){case'P':isNot=true;goto case'p';case'p':pc.Advance();pc.Expecting('{');var
- uc=new StringBuilder();int uli=pc.Line;int uco=pc.Column;long upo=pc.Position;while(-1!=pc.Advance()&&'}'!=pc.Current)uc.Append((char)pc.Current);pc.Expecting('}');
-pc.Advance();int uci=0;switch(uc.ToString()){case"Pe":uci=21;break;case"Pc":uci=19;break;case"Cc":uci=14;break;case"Sc":uci=26;break;case"Pd":uci=19;break;
-case"Nd":uci=8;break;case"Me":uci=7;break;case"Pf":uci=23;break;case"Cf":uci=15;break;case"Pi":uci=22;break;case"Nl":uci=9;break;case"Zl":uci=12;break;
-case"Ll":uci=1;break;case"Sm":uci=25;break;case"Lm":uci=3;break;case"Sk":uci=27;break;case"Mn":uci=5;break;case"Ps":uci=20;break;case"Lo":uci=4;break;
-case"Cn":uci=29;break;case"No":uci=10;break;case"Po":uci=24;break;case"So":uci=28;break;case"Zp":uci=13;break;case"Co":uci=17;break;case"Zs":uci=11;break;
-case"Mc":uci=6;break;case"Cs":uci=16;break;case"Lt":uci=2;break;case"Lu":uci=0;break;}if(isNot){next=FA.Set(CharCls.UnicodeCategories[uci],accept);}else
- next=FA.Set(CharCls.NotUnicodeCategories[uci],accept);break;case'd':next=FA.Set(CharCls.digit,accept);pc.Advance();break;case'D':next=FA.Set(RangeUtility.NotRanges(CharCls.digit),
-accept);pc.Advance();break;case's':next=FA.Set(CharCls.space,accept);pc.Advance();break;case'S':next=FA.Set(RangeUtility.NotRanges(CharCls.space),accept);
-pc.Advance();break;case'w':next=FA.Set(CharCls.word,accept);pc.Advance();break;case'W':next=FA.Set(RangeUtility.NotRanges(CharCls.word),accept);pc.Advance();
-break;default:if(-1!=(ich=_ParseEscapePart(pc))){next=FA.Literal(new int[]{ich},accept);}else{pc.Expecting(); return null;}break;}next=_ParseModifier(next,
-pc,accept);if(null!=result){result=FA.Concat(new FA[]{result,next},accept);}else result=next;break;case')':return result;case'(':pc.Advance();pc.Expecting();
-next=Parse(pc);pc.Expecting(')');pc.Advance();next=_ParseModifier(next,pc,accept);if(null==result)result=next;else{result=FA.Concat(new FA[]{result,next
-},accept);}break;case'|':if(-1!=pc.Advance()){next=Parse(pc);result=FA.Or(new FA[]{result,next},accept);}else{result=FA.Optional(result,accept);}break;
-case'[':var seti=_ParseSet(pc);var set=seti.Value;if(seti.Key)set=RangeUtility.NotRanges(set);next=FA.Set(set,accept);next=_ParseModifier(next,pc,accept);
-if(null==result)result=next;else{result=FA.Concat(new FA[]{result,next},accept);}break;default:ich=pc.Current;if(char.IsHighSurrogate((char)ich)){if(-1
-==pc.Advance())throw new ExpectingException("Expecting low surrogate in Unicode stream",pc.Line,pc.Column,pc.Position,pc.FileOrUrl,"low-surrogate");ich
-=char.ConvertToUtf32((char)ich,(char)pc.Current);}next=FA.Literal(new int[]{ich},accept);pc.Advance();next=_ParseModifier(next,pc,accept);if(null==result)
-result=next;else{result=FA.Concat(new FA[]{result,next},accept);}break;}}}static KeyValuePair<bool,int[]>_ParseSet(LexContext pc){var result=new List<int>();
-pc.EnsureStarted();pc.Expecting('[');pc.Advance();pc.Expecting();var isNot=false;if('^'==pc.Current){isNot=true;pc.Advance();pc.Expecting();}var firstRead
-=true;int firstChar='\0';var readFirstChar=false;var wantRange=false;while(-1!=pc.Current&&(firstRead||']'!=pc.Current)){if(!wantRange){ if('['==pc.Current)
-{pc.Advance();pc.Expecting();if(':'!=pc.Current){firstChar='[';readFirstChar=true;}else{pc.Advance();pc.Expecting();var ll=pc.CaptureBuffer.Length;if(!pc.TryReadUntil(':',
-false))throw new ExpectingException("Expecting character class",pc.Line,pc.Column,pc.Position,pc.FileOrUrl);pc.Expecting(':');pc.Advance();pc.Expecting(']');
-pc.Advance();var cls=pc.GetCapture(ll);int[]ranges;if(!CharCls.CharacterClasses.TryGetValue(cls,out ranges))throw new ExpectingException("Unknown character class \""
+}}}namespace F{partial class FA{public static int Lex(DfaEntry[]dfaTable,IEnumerator<int>input,StringBuilder capture){var state=0;while(input.MoveNext())
+{var next=FA.Move(dfaTable,state,input.Current);if(-1==next){return dfaTable[state].AcceptSymbolId;}capture.Append(char.ConvertFromUtf32(input.Current));
+state=next;}return dfaTable[state].AcceptSymbolId;}public int Lex(IEnumerator<int>input,StringBuilder capture){var states=FillEpsilonClosure();while(input.MoveNext())
+{var next=FA.FillMove(states,input.Current);if(0==next.Count){foreach(var state in states){if(state.IsAccepting)return state.AcceptSymbol;}return-1;}capture.Append(char.ConvertFromUtf32(input.Current));
+states=next;}foreach(var state in states){if(state.IsAccepting)return state.AcceptSymbol;}return-1;}}}namespace F{partial class FA{public static FA Parse(IEnumerable<char>
+input,int accept=-1,int line=1,int column=1,long position=0,string fileOrUrl=null){var lc=LexContext.Create(input);lc.EnsureStarted();lc.SetLocation(line,
+column,position,fileOrUrl);return Parse(lc,accept);}internal static FA Parse(LexContext pc,int accept=-1){FA result=null,next=null;int ich;pc.EnsureStarted();
+while(true){switch(pc.Current){case-1:return result;case'.':var dot=FA.Set(new int[]{0,0x10ffff},accept);if(null==result)result=dot;else{result=FA.Concat(new
+ FA[]{result,dot},accept);}pc.Advance();result=_ParseModifier(result,pc,accept);break;case'\\':pc.Advance();pc.Expecting();var isNot=false;switch(pc.Current)
+{case'P':isNot=true;goto case'p';case'p':pc.Advance();pc.Expecting('{');var uc=new StringBuilder();int uli=pc.Line;int uco=pc.Column;long upo=pc.Position;
+while(-1!=pc.Advance()&&'}'!=pc.Current)uc.Append((char)pc.Current);pc.Expecting('}');pc.Advance();int uci=0;switch(uc.ToString()){case"Pe":uci=21;break;
+case"Pc":uci=19;break;case"Cc":uci=14;break;case"Sc":uci=26;break;case"Pd":uci=19;break;case"Nd":uci=8;break;case"Me":uci=7;break;case"Pf":uci=23;break;
+case"Cf":uci=15;break;case"Pi":uci=22;break;case"Nl":uci=9;break;case"Zl":uci=12;break;case"Ll":uci=1;break;case"Sm":uci=25;break;case"Lm":uci=3;break;
+case"Sk":uci=27;break;case"Mn":uci=5;break;case"Ps":uci=20;break;case"Lo":uci=4;break;case"Cn":uci=29;break;case"No":uci=10;break;case"Po":uci=24;break;
+case"So":uci=28;break;case"Zp":uci=13;break;case"Co":uci=17;break;case"Zs":uci=11;break;case"Mc":uci=6;break;case"Cs":uci=16;break;case"Lt":uci=2;break;
+case"Lu":uci=0;break;}if(isNot){next=FA.Set(CharCls.UnicodeCategories[uci],accept);}else next=FA.Set(CharCls.NotUnicodeCategories[uci],accept);break;case
+'d':next=FA.Set(CharCls.digit,accept);pc.Advance();break;case'D':next=FA.Set(RangeUtility.NotRanges(CharCls.digit),accept);pc.Advance();break;case's':
+next=FA.Set(CharCls.space,accept);pc.Advance();break;case'S':next=FA.Set(RangeUtility.NotRanges(CharCls.space),accept);pc.Advance();break;case'w':next
+=FA.Set(CharCls.word,accept);pc.Advance();break;case'W':next=FA.Set(RangeUtility.NotRanges(CharCls.word),accept);pc.Advance();break;default:if(-1!=(ich
+=_ParseEscapePart(pc))){next=FA.Literal(new int[]{ich},accept);}else{pc.Expecting(); return null;}break;}next=_ParseModifier(next,pc,accept);if(null!=
+result){result=FA.Concat(new FA[]{result,next},accept);}else result=next;break;case')':return result;case'(':pc.Advance();pc.Expecting();next=Parse(pc);
+pc.Expecting(')');pc.Advance();next=_ParseModifier(next,pc,accept);if(null==result)result=next;else{result=FA.Concat(new FA[]{result,next},accept);}break;
+case'|':if(-1!=pc.Advance()){next=Parse(pc);result=FA.Or(new FA[]{result,next},accept);}else{result=FA.Optional(result,accept);}break;case'[':var seti
+=_ParseSet(pc);var set=seti.Value;if(seti.Key)set=RangeUtility.NotRanges(set);next=FA.Set(set,accept);next=_ParseModifier(next,pc,accept);if(null==result)
+result=next;else{result=FA.Concat(new FA[]{result,next},accept);}break;default:ich=pc.Current;if(char.IsHighSurrogate((char)ich)){if(-1==pc.Advance())
+throw new ExpectingException("Expecting low surrogate in Unicode stream",pc.Line,pc.Column,pc.Position,pc.FileOrUrl,"low-surrogate");ich=char.ConvertToUtf32((char)ich,
+(char)pc.Current);}next=FA.Literal(new int[]{ich},accept);pc.Advance();next=_ParseModifier(next,pc,accept);if(null==result)result=next;else{result=FA.Concat(new
+ FA[]{result,next},accept);}break;}}}static KeyValuePair<bool,int[]>_ParseSet(LexContext pc){var result=new List<int>();pc.EnsureStarted();pc.Expecting('[');
+pc.Advance();pc.Expecting();var isNot=false;if('^'==pc.Current){isNot=true;pc.Advance();pc.Expecting();}var firstRead=true;int firstChar='\0';var readFirstChar
+=false;var wantRange=false;while(-1!=pc.Current&&(firstRead||']'!=pc.Current)){if(!wantRange){ if('['==pc.Current){pc.Advance();pc.Expecting();if(':'!=
+pc.Current){firstChar='[';readFirstChar=true;}else{pc.Advance();pc.Expecting();var ll=pc.CaptureBuffer.Length;if(!pc.TryReadUntil(':',false))throw new
+ ExpectingException("Expecting character class",pc.Line,pc.Column,pc.Position,pc.FileOrUrl);pc.Expecting(':');pc.Advance();pc.Expecting(']');pc.Advance();
+var cls=pc.GetCapture(ll);int[]ranges;if(!CharCls.CharacterClasses.TryGetValue(cls,out ranges))throw new ExpectingException("Unknown character class \""
 +cls+"\" specified",pc.Line,pc.Column,pc.Position,pc.FileOrUrl);result.AddRange(ranges);readFirstChar=false;wantRange=false;firstRead=false;continue;}
 }if(!readFirstChar){if(char.IsHighSurrogate((char)pc.Current)){var chh=(char)pc.Current;pc.Advance();pc.Expecting();firstChar=char.ConvertToUtf32(chh,
 (char)pc.Current);pc.Advance();pc.Expecting();}else if('\\'==pc.Current){pc.Advance();firstChar=_ParseRangeEscapePart(pc);}else{firstChar=pc.Current;pc.Advance();
@@ -1158,7 +1163,7 @@ u|=_FromHexChar((char)pc.Current);u<<=4;if(-1==pc.Advance())return unchecked((ch
 {i=char.ConvertToUtf32((char)i,(char)pc.Current);pc.Advance();}return(char)i;}}}}namespace F{/// <summary>
 /// Represents the current status of the operation
 /// </summary>
-#if FLIB
+#if FALIB
 public
 #endif
 enum FAStatus{/// <summary>
@@ -1173,7 +1178,7 @@ DfaTransform,/// <summary>
 TrimDuplicates}/// <summary>
 /// Represents the progress of the operation
 /// </summary>
-#if FLIB
+#if FALIB
 public
 #endif
 struct FAProgress{/// <summary>
@@ -1602,7 +1607,7 @@ public bool Equals(ListEqualityComparer<T>other){return!object.ReferenceEquals(n
 public override bool Equals(object obj){if(object.ReferenceEquals(null,obj)){return false;}if(object.ReferenceEquals(this,obj)){return true;}if(obj.GetType()
 !=typeof(ListEqualityComparer<T>)){return false;}return this.Equals((ListEqualityComparer<T>)obj);}/// <inheritdoc />
 public override int GetHashCode(){return base.GetHashCode();}}}namespace F{
-#if FLIB
+#if FALIB
 public
 #endif
 static class RangeUtility{public static bool Intersects(int[]x,int[]y){if(null==x||null==y)return false;if(x==y)return true;for(var i=0;i<x.Length;i+=2)
@@ -1641,7 +1646,7 @@ return;default:var s=char.ConvertFromUtf32(rangeChar);if(!char.IsLetterOrDigit(s
 /// Represents a single token returned from the <see cref="Tokenizer"/>'s <see cref="TokenEnumerator"/>
 /// A token contains the symbol, the value, and the location information for each lexeme returned from a lexer/tokenizer
 /// </summary>
-#if FLIB
+#if FALIB
 public
 #endif
 struct Token{public int SymbolId{get;internal set;}public int Line{get;internal set;}public int Column{get;internal set;}public long Position{get;internal
@@ -1651,7 +1656,7 @@ struct Token{public int SymbolId{get;internal set;}public int Line{get;internal 
 /// the symbol for each matched chunk, along with the matching value and location information. It's a regex runner.
 /// </summary>
 /// <remarks>The heavy lifting here is done by the <see cref="TokenEnumerator"/> class. This just provides a for-each interface over the tokenization process.</remarks>
-#if FLIB
+#if FALIB
 public
 #endif
 class Tokenizer:IEnumerable<Token>{FA _lexer;IEnumerable<char>_input;bool _reportEndToken;public Tokenizer(FA lexer,IEnumerable<char>input,bool reportEndToken=false)
@@ -1683,7 +1688,10 @@ bool _MoveNextInput(){if(_input.MoveNext()){if(-1!=_state){++_position;if('\n'==
 /// <param name="states">The states to check</param>
 /// <returns>The first symbol found or -1 if none were found</returns>
 static int _GetAcceptingSymbol(IEnumerable<FA>states){foreach(var fa in states)if(fa.IsAccepting)return fa.AcceptSymbol;return-1;}public void Reset(){
-_input.Reset();_state=-1;_line=1;_column=1;_position=0;}}}namespace F{static class UnicodeUtility{public static IEnumerable<int>ToUtf32(IEnumerable<char>
-@string){int chh=-1;foreach(var ch in@string){if(char.IsHighSurrogate(ch)){chh=ch;continue;}else chh=-1;if(-1!=chh){if(!char.IsLowSurrogate(ch))throw new
- IOException("Unterminated Unicode surrogate pair found in string.");yield return char.ConvertToUtf32(unchecked((char)chh),ch);chh=-1;continue;}yield return
- ch;}}}}
+_input.Reset();_state=-1;_line=1;_column=1;_position=0;}}}namespace F{
+#if FALIB
+public
+#endif
+static class UnicodeUtility{public static IEnumerable<int>ToUtf32(IEnumerable<char>@string){int chh=-1;foreach(var ch in@string){if(char.IsHighSurrogate(ch))
+{chh=ch;continue;}else chh=-1;if(-1!=chh){if(!char.IsLowSurrogate(ch))throw new IOException("Unterminated Unicode surrogate pair found in string.");yield
+ return char.ConvertToUtf32(unchecked((char)chh),ch);chh=-1;continue;}yield return ch;}}}}

@@ -17,7 +17,7 @@ Imports System.IO
 Imports System.Text
 
 Namespace RolexDemoVB
-    <System.CodeDom.Compiler.GeneratedCodeAttribute("Rolex", "1.0.0.0")>  _
+    <System.CodeDom.Compiler.GeneratedCodeAttribute("Rolex", "0.5.0.0")>  _
     Friend Structure Token
         Public Line As Integer
         Public Column As Integer
@@ -26,7 +26,7 @@ Namespace RolexDemoVB
         Public Value As String
         Public Skipped() As Token
     End Structure
-    <System.CodeDom.Compiler.GeneratedCodeAttribute("Rolex", "1.0.0.0")>  _
+    <System.CodeDom.Compiler.GeneratedCodeAttribute("Rolex", "0.5.0.0")>  _
     Friend Structure DfaEntry
         Public Transitions() As DfaTransitionEntry
         Public AcceptSymbolId As Integer
@@ -35,7 +35,7 @@ Namespace RolexDemoVB
             Me.AcceptSymbolId = acceptSymbolId
         End Sub
     End Structure
-    <System.CodeDom.Compiler.GeneratedCodeAttribute("Rolex", "1.0.0.0")>  _
+    <System.CodeDom.Compiler.GeneratedCodeAttribute("Rolex", "0.5.0.0")>  _
     Friend Structure DfaTransitionEntry
         Public PackedRanges() As Integer
         Public Destination As Integer
@@ -44,7 +44,7 @@ Namespace RolexDemoVB
             Me.Destination = destination
         End Sub
     End Structure
-    <System.CodeDom.Compiler.GeneratedCodeAttribute("Rolex", "1.0.0.0")>  _
+    <System.CodeDom.Compiler.GeneratedCodeAttribute("Rolex", "0.5.0.0")>  _
     Friend Class TableTokenizer
         Inherits Object
         Implements IEnumerable(Of Token)
@@ -79,7 +79,7 @@ Namespace RolexDemoVB
             Me._input = input
         End Sub
     End Class
-    <System.CodeDom.Compiler.GeneratedCodeAttribute("Rolex", "1.0.0.0")>  _
+    <System.CodeDom.Compiler.GeneratedCodeAttribute("Rolex", "0.5.0.0")>  _
     Friend Class TableTokenizerEnumerator
         Inherits Object
         Implements IEnumerator(Of Token)

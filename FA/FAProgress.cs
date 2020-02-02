@@ -7,7 +7,7 @@ namespace F
 	/// <summary>
 	/// Represents the current status of the operation
 	/// </summary>
-#if FLIB
+#if FALIB
 	public 
 #endif
 	enum FAStatus
@@ -28,7 +28,7 @@ namespace F
 	/// <summary>
 	/// Represents the progress of the operation
 	/// </summary>
-#if FLIB
+#if FALIB
 	public 
 #endif
 	struct FAProgress

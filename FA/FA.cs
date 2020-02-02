@@ -4,7 +4,7 @@ using System.Text;
 
 namespace F
 {
-#if FLIB
+#if FALIB
 	public 
 #endif
 	sealed partial class FA
@@ -179,6 +179,12 @@ namespace F
 
 			return result;
 		}
+		/// <summary>
+		/// Converts the state machine to a Generalized NFA
+		/// </summary>
+		/// <param name="accept">The accept symbol</param>
+		/// <returns>A new GNFA state machine that accepts the same language</returns>
+		/// <remarks>A generalized NFA has a single start state and a single accept state that is final.</remarks>
 		public FA ToGnfa(int accept=-1)
 		{
 			var fa = Clone();
@@ -220,10 +226,27 @@ namespace F
 
 			return fa;
 		}
-		public ICollection<FA> FillAcceptingStates()
+		/// <summary>
+		/// Builds a simple lexer using the specified FA expressions
+		/// </summary>
+		/// <param name="expressions">The FSMs/expressions to compose the lexer from</param>
+		/// <returns>An FSM suitable for lexing</returns>
+		public static FA ToLexer(IEnumerable<FA> expressions)
 		{
+			var result = new FA();
+			foreach (var expr in expressions)
+				result.EpsilonTransitions.Add(expr);
+			return result;
+		}
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <returns></returns>
+		public ICollection<FA> FillAcceptingStates(ICollection<FA> result = null)
+		{
+			if (null == result)
+				result = new HashSet<FA>();
 			var closure = FillClosure();
-			var result = new HashSet<FA>();
 			foreach (var fa in closure)
 				if (fa.IsAccepting)
 					result.Add(fa);
@@ -582,157 +605,6 @@ namespace F
 			return result;
 		}
 
-		/*public FA ToDfa(IProgress<FAProgress> progress=null)
-		{
-			// if it's already a DFA we don't need to do this transformation.
-			// however, we still need to clone the state machine it because
-			// the consumer expects a copy, not the original state.
-			if (IsDfa)
-				return Clone();
-			// The DFA states are keyed by the set of NFA states they represent.
-			var dfaMap = new Dictionary<List<FA>, FA>(_SetComparer.Default);
-
-			var unmarked = new HashSet<FA>();
-
-			// compute the epsilon closure of the initial state in the NFA
-			var states = new List<FA>();
-			FillEpsilonClosure(states);
-
-			// create a new state to represent the current set of states. If one 
-			// of those states is accepting, set this whole state to be accepting.
-			FA dfa = new FA();
-			var al = new List<int>();
-			// find the accepting symbols for the current states
-			foreach (var fa in states)
-				if (fa.IsAccepting)
-					if (!al.Contains(fa.AcceptSymbol))
-						al.Add(fa.AcceptSymbol);
-			// here we assign the appropriate accepting symbol
-			int ac = al.Count;
-			//if (1 == ac)
-			if(0<ac)
-				dfa.AcceptSymbol = al[0];
-			//else if (1 < ac)
-			//	dfa.AcceptSymbol = al[0]; // could throw, just choose the first one
-			dfa.IsAccepting = 0 < ac;
-
-			FA result = dfa; // store the initial state for later, so we can return it.
-
-			// add it to the dfa map
-			dfaMap.Add(states, dfa);
-
-			// add it to the unmarked states, signalling that we still have work to do.
-			unmarked.Add(dfa);
-			bool done = false;
-			var j = 0;
-			while (!done)
-			{
-				if(null!=progress)
-				{
-					progress.Report(new FAProgress(FAStatus.DfaTransform, j));
-				}
-				done = true;
-				// a new hashset used to hold our current key states
-				var mapKeys = new HashSet<List<FA>>(dfaMap.Keys, _SetComparer.Default);
-				foreach (var mapKey in mapKeys)
-				{
-					dfa = dfaMap[mapKey];
-					if (unmarked.Contains(dfa))
-					{
-						// when we get here, mapKey represents the epsilon closure of our 
-						// current dfa state, which is indicated by kvp.Value
-
-						// build the transition list for the new state by combining the transitions
-						// from each of the old states
-
-						// retrieve every possible input for these states
-						var inputs = new List<KeyValuePair<int,int>>();
-						var sub = new List<KeyValuePair<int, int>>(inputs.Count);
-						foreach (var state in mapKey)
-						{
-							foreach (var trns in state.InputTransitions)
-							{
-								var found = false;
-								for(int ic=inputs.Count,i=0;i<ic;++i)
-								{
-									var r = inputs[i];
-									if(r.Key==trns.Key.Key && r.Value==trns.Key.Value)
-									{
-										found = true;
-										break;
-									}
-								}
-								if (!found)
-								{
-									inputs.Add(trns.Key);
-									
-								}
-
-							}
-						}
-						
-						inputs.Sort((x, y) => { 
-							var c = x.Key.CompareTo(y.Key);
-							if (0 == c)
-								c = x.Value.CompareTo(y.Value);
-							return c;
-						
-						});
-						RangeUtility.NormalizeSortedRangeList(inputs);
-						// for each input, create a new transition
-						foreach (var input in inputs)
-						{
-							var acc = new List<int>();
-							var nextStates = new List<FA>();
-							foreach (var state in mapKey)
-							{
-
-								foreach (var trns in state.InputTransitions)
-								{
-									if (RangeUtility.Intersects(trns.Key, input))
-									{
-										FA dst = trns.Value;
-										foreach (var d in dst.FillEpsilonClosure())
-										{
-											//  add the accepting symbols
-											if (d.IsAccepting)
-												if (!acc.Contains(d.AcceptSymbol))
-													acc.Add(d.AcceptSymbol);
-											if (!nextStates.Contains(d))
-												nextStates.Add(d);
-										}
-									}
-								}
-							}
-							
-							FA nextDfa;
-							if (!dfaMap.TryGetValue(nextStates, out nextDfa))
-							{
-								ac = acc.Count;
-								nextDfa = new FA(0 < ac);
-								// assign the appropriate accepting symbol
-								//if (1 == ac)
-								if(0<ac)
-									nextDfa.AcceptSymbol = acc[0];
-								//else if (1 < ac)
-								//	ndfa.AcceptSymbol = acc[0]; // could throw, instead just set it to the first state's accept
-								dfaMap.Add(nextStates, nextDfa);
-								// work on this new state
-								unmarked.Add(nextDfa);
-								done = false;
-							}
-							//if (0 == dfa.InputTransitions.Count)
-								dfa.InputTransitions.Add(input, nextDfa);
-							
-						}
-						// we're done with this state
-						unmarked.Remove(dfa);
-					}
-				}
-				++j;
-			}
-			return result;
-		}*/
 		/// <summary>
 		/// Indicates whether or not this state machine is a DFA
 		/// </summary>
@@ -747,7 +619,7 @@ namespace F
 			}
 		}
 		/// <summary>
-		/// Fills a collection with the result of moving each of the specified <paramref name="states"/> by the specified input.
+		/// Fills a collection with the result of moving each of the specified <paramref name="states"/> on the specified input.
 		/// </summary>
 		/// <param name="states">The states to examine</param>
 		/// <param name="input">The input to use</param>

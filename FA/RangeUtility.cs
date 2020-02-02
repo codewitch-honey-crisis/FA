@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace F
 {
-#if FLIB
+#if FALIB
 	public
 #endif
 	static class RangeUtility

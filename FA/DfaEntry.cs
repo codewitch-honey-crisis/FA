@@ -34,7 +34,7 @@ namespace F
 	/// Represents an entry in a DFA state table
 	/// </summary>
 	[TypeConverter(typeof(DfaEntryConverter))]
-#if FLIB
+#if FALIB
 	public 
 #endif
 	struct DfaEntry
