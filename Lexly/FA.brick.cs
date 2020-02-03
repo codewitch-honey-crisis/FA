@@ -897,11 +897,13 @@ public static FA ToLexer(IEnumerable<FA>expressions){var result=new FA();foreach
 public ICollection<FA>FillAcceptingStates(ICollection<FA>result=null){if(null==result)result=new HashSet<FA>();var closure=FillClosure();foreach(var fa
  in closure)if(fa.IsAccepting)result.Add(fa);return result;}public bool IsFinal{get{return 0==InputTransitions.Count&&0==EpsilonTransitions.Count;}}public
  bool IsNeutral{get{return!IsAccepting&&0==InputTransitions.Count&&1==EpsilonTransitions.Count;}}public void TrimNeutrals(){var cl=new List<FA>();FillClosure(cl);
-foreach(var s in cl){var repls=new List<KeyValuePair<FA,FA>>();var td=new List<KeyValuePair<KeyValuePair<int,int>,FA>>(s.InputTransitions);s.InputTransitions.Clear();
-foreach(var trns in td){var fa=trns.Value;var fa2=_ForwardNeutrals(fa);if(null==fa2)throw new InvalidProgramException("null in forward neutrals support code");
-s.InputTransitions.Add(trns.Key,fa2);}var el=new List<FA>(s.EpsilonTransitions);var ec=el.Count;s.EpsilonTransitions.Clear();for(int j=0;j<ec;++j)s.EpsilonTransitions.Add(_ForwardNeutrals(el[j]));
-}}public FA FirstAcceptingState{get{foreach(var fa in FillClosure()){if(fa.IsAccepting)return fa;}return null;}}public void AddInputTransition(KeyValuePair<int,int>
-range,FA dst){foreach(var trns in InputTransitions){if(RangeUtility.Intersects(trns.Key,range))throw new ArgumentException("There already is a transition to a different state on at least part of the specified input range");
+foreach(var s in cl){var td=new List<KeyValuePair<KeyValuePair<int,int>,FA>>(s.InputTransitions.Count);foreach(var trns in s.InputTransitions){var fa2
+=_ForwardNeutrals(trns.Value);if(null==fa2)throw new InvalidProgramException("null in forward neutrals support code");td.Add(new KeyValuePair<KeyValuePair<int,
+int>,FA>(trns.Key,fa2));}s.InputTransitions.Clear();foreach(var trns in td){s.InputTransitions.Add(trns.Key,trns.Value);}var el=new List<FA>(s.EpsilonTransitions.Count);
+foreach(var fa in s.EpsilonTransitions){var fa2=_ForwardNeutrals(fa);if(null==fa2)throw new InvalidProgramException("null in forward neutrals support code");
+el.Add(fa2);}var ec=el.Count;s.EpsilonTransitions.Clear();for(int j=0;j<ec;++j){s.EpsilonTransitions.Add(el[j]);}}}public FA FirstAcceptingState{get{foreach(var
+ fa in FillClosure()){if(fa.IsAccepting)return fa;}return null;}}public void AddInputTransition(KeyValuePair<int,int>range,FA dst){foreach(var trns in
+ InputTransitions){if(RangeUtility.Intersects(trns.Key,range))throw new ArgumentException("There already is a transition to a different state on at least part of the specified input range");
 }InputTransitions.Add(range,dst);}public ICollection<FA>FillClosure(ICollection<FA>result=null){if(null==result)result=new HashSet<FA>();if(result.Contains(this))
 return result;result.Add(this);foreach(var trns in InputTransitions)trns.Value.FillClosure(result);foreach(var fa in EpsilonTransitions)fa.FillClosure(result);
 return result;}public ICollection<FA>FillEpsilonClosure(ICollection<FA>result=null){if(null==result)result=new HashSet<FA>();if(result.Contains(this))

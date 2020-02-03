@@ -268,22 +268,34 @@ namespace F
 			FillClosure(cl);
 			foreach (var s in cl)
 			{
-				var repls = new List<KeyValuePair<FA, FA>>();
-				var td = new List<KeyValuePair<KeyValuePair<int,int>, FA>>(s.InputTransitions);
+				var td = new List<KeyValuePair<KeyValuePair<int,int>, FA>>(s.InputTransitions.Count);
+				
+				foreach(var trns in s.InputTransitions)
+				{
+					var fa2 = _ForwardNeutrals(trns.Value);
+					if (null == fa2)
+						throw new InvalidProgramException("null in forward neutrals support code");
+					td.Add(new KeyValuePair<KeyValuePair<int, int>, FA>(trns.Key, fa2));
+				}
 				s.InputTransitions.Clear();
 				foreach (var trns in td)
 				{
-					var fa = trns.Value;
+					s.InputTransitions.Add(trns.Key, trns.Value);
+				}
+				var el = new List<FA>(s.EpsilonTransitions.Count);
+				foreach(var fa in s.EpsilonTransitions)
+				{
 					var fa2 = _ForwardNeutrals(fa);
 					if (null == fa2)
 						throw new InvalidProgramException("null in forward neutrals support code");
-					s.InputTransitions.Add(trns.Key, fa2);
+					el.Add(fa2);
 				}
-				var el = new List<FA>(s.EpsilonTransitions);
 				var ec = el.Count;
 				s.EpsilonTransitions.Clear();
 				for (int j = 0; j < ec; ++j)
-					s.EpsilonTransitions.Add(_ForwardNeutrals(el[j]));
+				{
+					s.EpsilonTransitions.Add(el[j]);
+				}
 			}
 		}
 		public FA FirstAcceptingState {

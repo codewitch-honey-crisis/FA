@@ -20,6 +20,10 @@ namespace FADemo
 				FA.Parse("[\r\n\t\v\f ]+", 3)
 
 			};
+			var tmp = FA.Parse(@"0|\-?[1-9][0-9]*");
+			tmp.TrimNeutrals();
+			tmp.RenderToFile(@"..\..\int_nfa.jpg");
+			return;
 			// build our lexer
 			var nfa = FA.ToLexer(lexa);
 			nfa.TrimNeutrals();

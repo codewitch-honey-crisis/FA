@@ -49,6 +49,9 @@
     <Compile Include="Export\Token.cs" />
     <Compile Include="Export\Tokenizer.cs" />
     <Content Include="Export\TokenizerTemplate.cs" />
+    <Compile Include="FA.brick.cs" />
+    <Compile Include="Lex.brick.cs" />
+    <Compile Include="LexContext.brick.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
