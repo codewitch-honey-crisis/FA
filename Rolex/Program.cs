@@ -371,11 +371,20 @@ namespace Rolex
 		static void _PrintUsage(TextWriter w)
 		{
 			w.Write("Usage: "+Filename + " ");
-			w.WriteLine("<inputFile>");
+			w.WriteLine("<inputfile> [/output <outputfile>] [/class <codeclass>] [/namespace <codenamespace>]");
+			w.WriteLine("   [/language <codelanguage> [/ignorecase] [/prototype] [/noshared] [/ifstale]");
 			w.WriteLine();
 			w.WriteLine(Name + " generates a lexer/scanner/tokenizer in the target .NET language");
 			w.WriteLine();
-			w.WriteLine("	<inputFile>		The input lexer specification");
+			w.WriteLine("   <inputfile>     The input lexer specification");
+			w.WriteLine("   <outputfile>    The output source file - defaults to STDOUT");
+			w.WriteLine("   <codeclass>     The name of the main class to generate - default derived from <outputfile>");
+			w.WriteLine("   <codenamespace> The namespace to generate the code under - defaults to none");
+			w.WriteLine("   <codelanguage>  The .NET language to generate the code in - default derived from <outputfile>");
+			w.WriteLine("   <ignorecase>    Create a case insensitive lexer - defaults to case sensitive");
+			w.WriteLine("   <prototype>     Quickly generate a prototype lexer. Requires a reference to "+Filename+" to use - default not a prototype");
+			w.WriteLine("   <noshared>      Do not generate the shared code as part of the output. Defaults to generating the shared code");
+			w.WriteLine("   <ifstale>       Only generate if the input is newer than the output");
 			w.WriteLine();
 		}
 		static string _GetCodeBase()
