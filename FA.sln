@@ -44,6 +44,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LexlyDemo", "LexlyDemo\Lexl
 		{4B30D333-1DB5-4035-8996-E233AAA23C0D} = {4B30D333-1DB5-4035-8996-E233AAA23C0D}
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LexlyDevStudio", "LexlyDevStudio\LexlyDevStudio.csproj", "{8AC8BB66-1AE6-47E6-BBE7-690278107720}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -98,6 +100,10 @@ Global
 		{06B39ACD-EB4E-480E-A153-14851E16F5D7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{06B39ACD-EB4E-480E-A153-14851E16F5D7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{06B39ACD-EB4E-480E-A153-14851E16F5D7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8AC8BB66-1AE6-47E6-BBE7-690278107720}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8AC8BB66-1AE6-47E6-BBE7-690278107720}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8AC8BB66-1AE6-47E6-BBE7-690278107720}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8AC8BB66-1AE6-47E6-BBE7-690278107720}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
