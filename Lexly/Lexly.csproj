@@ -61,20 +61,6 @@
     <None Include="Key.snk" />
     <None Include="Slang.lx" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\FA\FA.csproj">
-      <Project>{b6c72046-0d75-425f-b791-6ced5aaaca56}</Project>
-      <Name>FA</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\LexContext\LexContext.csproj">
-      <Project>{4d205050-39e1-4c0f-9205-fde43b73095a}</Project>
-      <Name>LexContext</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Lex\Lex.csproj">
-      <Project>{596d1001-ce23-4268-8ebf-f267131a8430}</Project>
-      <Name>Lex</Name>
-    </ProjectReference>
-  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PreBuildEvent>"$(SolutionDir)csbrick.exe" "$(SolutionDir)LexContext\LexContext.csproj" /output "$(ProjectDir)LexContext.brick.cs"
