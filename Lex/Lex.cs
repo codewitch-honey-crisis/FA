@@ -22,7 +22,7 @@ namespace L
 		public static void RenderOptimizedExecutionGraph(LexContext expression,string filename)
 		{
 			var ast = Ast.Parse(expression);
-			var fa = ast.ToFA();
+			var fa = ast.ToFA(0);
 			fa.TrimNeutrals();
 			fa.RenderToFile(filename);
 		}
@@ -122,18 +122,18 @@ namespace L
 			{ 
 				try
 				{
-					fa = ast.ToFA();
+					fa = ast.ToFA(0);
 				}
 				// we can't do lazy expressions
 				catch (NotSupportedException) { }
 				if (null != fa)
 				{
-					Compiler.EmitPart(fa, prog);
+					Compiler.EmitFAPart(fa, prog);
 					prog=new List<int[]>(Compiler.RemoveDeadCode(prog));
 					return prog.ToArray();
 				}
 			}
-			Compiler.EmitPart(ast, prog);
+			Compiler.EmitAstInnerPart(ast, prog);
 			return prog.ToArray();
 		}
 		/// <summary>
@@ -491,7 +491,7 @@ namespace L
 								++idx;
 								while (pc.Length > idx)
 								{
-									_EnqueueFiber(ref currentFiberCount, ref currentFibers, new _Fiber(t, pc[idx], saved), sp );
+									_EnqueueFiber(ref nextFiberCount, ref nextFibers, new _Fiber(t, pc[idx], saved), sp );
 									if (currentFiberCount > maxFiberCount)
 										maxFiberCount = currentFiberCount;
 									++idx;
@@ -567,7 +567,8 @@ namespace L
 						
 					}
 				}
-				
+				if (-1 != match)
+					break;
 				if (passed)
 				{
 					sb.Append(char.ConvertFromUtf32(cur));
@@ -609,7 +610,7 @@ namespace L
 				input.CaptureBuffer.Append(sb.ToString(start, len - start));
 				result = match;
 				return new LexStatistics(maxFiberCount,passes/(sp+1f));
-			};
+			} 
 			result = -1; // error symbol
 			return new LexStatistics(maxFiberCount, passes / (sp + 1f));
 		}
@@ -655,6 +656,7 @@ namespace L
 			}
 			l[lcount] = t;
 			++lcount;
+			
 			var pc = t.Program[t.Index];
 			switch (pc[0])
 			{
@@ -690,6 +692,10 @@ namespace L
 				Program = fiber.Program;
 				Index = index;
 				Saved = saved;
+			}
+			public override string ToString()
+			{
+				return Disassemble(new int[][] { Program[Index] }).Substring(7);
 			}
 		}
 	}

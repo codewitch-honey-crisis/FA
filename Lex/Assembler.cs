@@ -34,7 +34,7 @@ namespace L
 				} else if(inst.Opcode==Inst.Regex)
 				{
 					var reg = new List<int[]>();
-					Compiler.EmitPart(inst.Expr, reg);
+					Compiler.EmitAstInnerPart(inst.Expr, reg);
 					regm.Add(inst, reg.ToArray());
 					pc += reg.Count;
 				}

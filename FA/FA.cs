@@ -867,6 +867,7 @@ namespace F
 				c = lclosure.Count;
 				
 			}
+			
 		}
 #region _SetComparer
 		// this class provides a series of comparers for various FA operations

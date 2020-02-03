@@ -1,4 +1,6 @@
-﻿using System;
+﻿//#define RUNPERF
+//#define VERBOSE
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -35,6 +37,8 @@ namespace LexDemo
 			Console.WriteLine("DFA dump:");
 			Console.WriteLine(Lex.Disassemble(progDfa));
 			Console.WriteLine();
+
+#if RUNPERF
 			var result = -1;
 			var count = 0f ;
 			var maxFiberCount = 0;
@@ -98,7 +102,11 @@ namespace LexDemo
 				Console.WriteLine();
 			}
 			Console.WriteLine();
-			_RunLexer();
+#endif
+			_RunLexer(progOpt);
+			Console.Error.WriteLine();
+			Console.Error.WriteLine();
+			//_RunLexer(progDfa);
 		}
 		static void _Perf(int[][] prog,string test)
 		{
@@ -136,21 +144,22 @@ namespace LexDemo
 		}
 
 		
-		static void _RunLexer()
+		static void _RunLexer(int[][] prog)
 		{
 
 			// compile a lexer
-			var prog = Lex.CompileLexerRegex(true,
+			if(null==prog)
+				prog = Lex.CompileLexerRegex(true,
 				@"[A-Z_a-z][A-Z_a-z0-9]*", // id
 				@"0|(\-?[1-9][0-9]*)", // int
 				@"( |\t|\r|\n|\v|\f)" // space
 			);
-			
+
 			// dump the program to the console
-			Console.WriteLine(Lex.Disassemble(prog));
+			//Console.WriteLine(Lex.Disassemble(prog));
 
 			// our test data - 14 tokens. 29 length
-			var text = "fubar bar 123 1foo bar -243 0";
+			var text = "#@*($ fubar bar 123 1foo bar -243 0";
 			Console.WriteLine("Lex: " + text);
 
 			// spin up a lexer context
@@ -163,7 +172,13 @@ namespace LexDemo
 				// clear any current captured data
 				lc.ClearCapture();
 				int acc;
-				var stat = Lex.RunWithLoggingAndStatistics(prog, lc, Console.Error, out acc);
+				var stat = Lex.RunWithLoggingAndStatistics(prog, lc,
+#if VERBOSE
+					Console.Error
+#else
+					TextWriter.Null
+#endif
+					,out acc);
 				// lex our next input and dump it
 				Console.WriteLine("{0}: \"{1}\"", acc, lc.GetCapture());
 			}

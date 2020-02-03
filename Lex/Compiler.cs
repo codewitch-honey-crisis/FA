@@ -21,7 +21,7 @@ namespace L
 		internal static List<int[]> Emit(Ast ast,int symbolId = -1)
 		{
 			var prog = new List<int[]>();
-			EmitPart(ast,prog);
+			EmitAstInnerPart(ast,prog);
 			if (-1 != symbolId)
 			{
 				var match = new int[2];
@@ -49,7 +49,17 @@ namespace L
 				prog.Add(lit);
 			}
 		}
-		internal static void EmitPart(Ast ast, IList<int[]> prog)
+		internal static void EmitAstPart(Ast ast,IList<int[]> prog,int symbolId=0)
+		{
+			EmitAstInnerPart(ast, prog);
+			var save = new int[] { Save, 1 };
+			prog.Add(save);
+			var match = new int[2];
+			match[0] = Match;
+			match[1] = symbolId;
+			prog.Add(match);
+		}
+		internal static void EmitAstInnerPart(Ast ast, IList<int[]> prog)
 		{
 			
 			int[] inst,jmp;
@@ -65,7 +75,7 @@ namespace L
 				case Ast.Cat: // concatenation
 					for(var i = 0;i<ast.Exprs.Length;i++)
 						if(null!=ast.Exprs[i])
-							EmitPart(ast.Exprs[i],prog);
+							EmitAstInnerPart(ast.Exprs[i],prog);
 					break;
 				case Ast.Dot: // dot/any
 					inst = new int[1];
@@ -104,7 +114,7 @@ namespace L
 						if (null != e)
 						{
 							jjmp[i + 1] = prog.Count;
-							EmitPart(e, prog);
+							EmitAstInnerPart(e, prog);
 							if (i == ast.Exprs.Length - 1)
 								continue;
 							if (i == ast.Exprs.Length - 2 && null == ast.Exprs[i + 1])
@@ -159,7 +169,7 @@ namespace L
 					// emit 
 					for (var i = 0; i < ast.Exprs.Length; i++)
 						if (null != ast.Exprs[i])
-							EmitPart(ast.Exprs[i], prog);
+							EmitAstInnerPart(ast.Exprs[i], prog);
 					inst[2] = prog.Count;
 					if (ast.IsLazy)
 					{
@@ -211,7 +221,7 @@ namespace L
 
 									for (var i = 0; i < ast.Exprs.Length; i++)
 										if (null != ast.Exprs[i])
-											EmitPart(ast.Exprs[i], prog);
+											EmitAstInnerPart(ast.Exprs[i], prog);
 									inst[1] = idx2;
 
 									jmp = new int[2];
@@ -231,17 +241,17 @@ namespace L
 									opt.Kind = Ast.Opt;
 									opt.Exprs = ast.Exprs;
 									opt.IsLazy = ast.IsLazy;
-									EmitPart(opt,prog);
+									EmitAstInnerPart(opt,prog);
 									return;
 								default: // ex: (foo){,10}
 									opt = new Ast();
 									opt.Kind = Ast.Opt;
 									opt.Exprs = ast.Exprs;
 									opt.IsLazy = ast.IsLazy;
-									EmitPart(opt, prog);
+									EmitAstInnerPart(opt, prog);
 									for (var i = 1; i < ast.Max; ++i)
 									{
-										EmitPart(opt,prog);
+										EmitAstInnerPart(opt,prog);
 									}
 									return;
 							}
@@ -254,7 +264,7 @@ namespace L
 									idx2 = prog.Count;
 									for (var i = 0; i < ast.Exprs.Length; i++)
 										if (null != ast.Exprs[i])
-											EmitPart(ast.Exprs[i], prog);
+											EmitAstInnerPart(ast.Exprs[i], prog);
 									inst = new int[3];
 									inst[0] = Jmp;
 									prog.Add(inst);
@@ -272,7 +282,7 @@ namespace L
 									// no repeat ex: (foo)
 									for (var i = 0; i < ast.Exprs.Length; i++)
 										if (null != ast.Exprs[i])
-											EmitPart(ast.Exprs[i], prog);
+											EmitAstInnerPart(ast.Exprs[i], prog);
 									return;
 								default:
 									// repeat ex: (foo){1,10}
@@ -283,8 +293,8 @@ namespace L
 									rep.Exprs = ast.Exprs;
 									for (var i = 0; i < ast.Exprs.Length; i++)
 										if (null != ast.Exprs[i])
-											EmitPart(ast.Exprs[i], prog);
-									EmitPart(rep, prog);
+											EmitAstInnerPart(ast.Exprs[i], prog);
+									EmitAstInnerPart(rep, prog);
 									return;
 							}
 						default: // bounded minum
@@ -297,13 +307,13 @@ namespace L
 									{
 										for (var i = 0; i < ast.Exprs.Length; i++)
 											if (null != ast.Exprs[i])
-												EmitPart(ast.Exprs[i], prog);
+												EmitAstInnerPart(ast.Exprs[i], prog);
 									}
 									rep = new Ast();
 									rep.Kind = Ast.Star;
 									rep.Exprs = ast.Exprs;
 									rep.IsLazy = ast.IsLazy;
-									EmitPart(rep,prog);
+									EmitAstInnerPart(rep,prog);
 									return;
 								case 1: // invalid or handled prior
 									// should never get here
@@ -313,7 +323,7 @@ namespace L
 									{
 										for (var i = 0; i < ast.Exprs.Length; i++)
 											if (null != ast.Exprs[i])
-												EmitPart(ast.Exprs[i], prog);
+												EmitAstInnerPart(ast.Exprs[i], prog);
 									}
 									if (ast.Min== ast.Max)
 										return;
@@ -324,7 +334,7 @@ namespace L
 									rep = new Ast();
 									rep.Kind = Ast.Rep;
 									rep.Min = rep.Max = ast.Max - ast.Min;
-									EmitPart(rep, prog);
+									EmitAstInnerPart(rep, prog);
 									return;
 
 							}
@@ -335,11 +345,11 @@ namespace L
 			}
 		}
 
-		internal static void EmitPart(FA fa,IList<int[]> prog)
+		internal static void EmitFAPart(FA fa,IList<int[]> prog)
 		{
-			fa = fa.ToDfa();
-			fa.TrimDuplicates();
-			fa = fa.ToGnfa();
+			//fa = fa.ToDfa();
+			//fa.TrimDuplicates();
+			//fa = fa.ToGnfa();
 			if (fa.IsNeutral)
 			{
 				foreach (var efa in fa.EpsilonTransitions)
@@ -347,26 +357,37 @@ namespace L
 					fa = efa;
 				}
 			}
+			var acc = fa.FillAcceptingStates(); 
+			foreach(var afa in acc)
+			{
+				if (!afa.IsFinal)
+				{
+					var ffa = new FA(true, afa.AcceptSymbol);
+					afa.EpsilonTransitions.Add(ffa);
+					afa.IsAccepting = false;
+				}
+			}
 			var rendered = new Dictionary<FA, int>();
 			var swFixups = new Dictionary<FA, int>();
 			var jmpFixups = new Dictionary<FA, int>();
 			var l = new List<FA>();
 			fa.FillClosure(l);
-			// move the accepting state to the end
-			var fas = fa.FirstAcceptingState;
-			var afai = l.IndexOf(fas);
-			l.RemoveAt(afai);
-			l.Add(fas);
 			for(int ic=l.Count,i=0;i<ic;++i)
 			{
-				var cfa = l[i];
-				
+				var cfa = l[i];	
 				rendered.Add(cfa, prog.Count);
 				if (!cfa.IsFinal)
 				{
 					int swfixup = prog.Count;
-					prog.Add(null);
+					prog.Add(null); // switch
 					swFixups.Add(cfa, swfixup);
+				} else
+				{
+#if DEBUG
+					System.Diagnostics.Debug.Assert(cfa.IsAccepting);
+#endif
+					prog.Add(new int[] { Save, 1 }); // save
+					prog.Add(new int[] { Match, cfa.AcceptSymbol});
 				}
 			}
 			for(int ic=l.Count,i=0;i<ic;++i)
@@ -405,7 +426,15 @@ namespace L
 						sw.Add(swFixups[cfa] + 1);
 					}
 					prog[swFixups[cfa]] = sw.ToArray();
-				}
+				} /*else
+				{
+					var save = new int[] { Save, 1 };
+					prog.Add(save);
+					var match = new int[2];
+					match[0] = Match;
+					match[1] = cfa.AcceptSymbol;
+					prog.Add(match);
+				}*/
 				
 				var jfi = -1;
 				if (jmpFixups.TryGetValue(cfa, out jfi))
@@ -419,7 +448,7 @@ namespace L
 			}
 			
 		}
-		static void _EmitPart(FA fa,IDictionary<FA,int> rendered, IList<int[]> prog)
+		static void EmitAstInnerPart(FA fa,IDictionary<FA,int> rendered, IList<int[]> prog)
 		{
 			if (fa.IsFinal)
 				return;
@@ -434,7 +463,7 @@ namespace L
 				{
 					dst = prog.Count;
 					rendered.Add(trns.Value, dst);
-					_EmitPart(trns.Value, rendered, prog);
+					EmitAstInnerPart(trns.Value, rendered, prog);
 
 				}
 				sw.Add(trns.Key.Key);
@@ -453,7 +482,7 @@ namespace L
 				{
 					dst = prog.Count;
 					rendered.Add(efa, dst);
-					_EmitPart(efa, rendered, prog);
+					EmitAstInnerPart(efa, rendered, prog);
 				}
 				sw.Add(dst);
 			}
@@ -636,34 +665,107 @@ namespace L
 					throw new InvalidProgramException("The instruction is not valid");
 			}
 		}
-		internal static int[][] EmitLexer(bool optimize,params Ast[] expressions)
+		internal static int[][] EmitLexer(bool optimize, params Ast[] expressions)
 		{
-			var parts = new KeyValuePair<int, int[][]>[expressions.Length];
-			for (var i = 0;i<expressions.Length;++i)
+			var fragments = new List<int[][]>(expressions.Length);
+			var ordered = new List<object>(); // i wish C# had proper unions
+			var i = 0;
+			if (optimize)
+			{
+				var workingFA = new List<FA>();
+				while (i < expressions.Length)
+				{
+					while (i < expressions.Length)
+					{
+						FA fa = null;
+						try
+						{
+							fa = expressions[i].ToFA(i);
+						}
+						// we can't do lazy expressions
+						catch (NotSupportedException) { }
+						if (null == fa)
+						{
+							if (0 < workingFA.Count)
+							{
+								ordered.Add(workingFA);
+								workingFA = new List<FA>();
+							}
+							break;
+						}
+						workingFA.Add(fa);
+						++i;
+					}
+					if (i == expressions.Length)
+					{
+						if (0 < workingFA.Count)
+						{
+							ordered.Add(workingFA);
+							workingFA = new List<FA>();
+						}
+					}
+					while (i < expressions.Length)
+					{
+						FA fa;
+						try
+						{
+							fa = expressions[i].ToFA(i);
+							workingFA.Add(fa);
+							++i;
+							if (i == expressions.Length)
+								ordered.Add(workingFA);
+							break;
+						}
+						catch { }
+						ordered.Add(expressions[i]);
+						++i;
+					}
+				}
+				i = 0;
+				for (int ic = ordered.Count; i < ic; ++i)
+				{
+					var l = ordered[i] as List<FA>;
+					if (null != l)
+					{
+						var root = new FA();
+						for (int jc = l.Count, j = 0; j < jc; ++j)
+						{
+							root.EpsilonTransitions.Add(l[j]);
+						}
+						root = root.ToDfa();
+						root.TrimDuplicates();
+						ordered[i] = root;
+					}
+				}
+			} else
+			{
+				for(i = 0;i<expressions.Length;++i)
+				{
+					ordered.Add(expressions[i]);
+				}
+			}
+			i = 0;
+			for(var ic = ordered.Count;i<ic;++i)
 			{
 				var l = new List<int[]>();
-				FA fa = null;
-				if (optimize)
-				{
-					try
-					{
-						fa = expressions[i].ToFA(i);
-					}
-					// we can't do lazy expressions
-					catch (NotSupportedException) { }
-				}
-				//fa = null;// for testing
+				var fa = ordered[i] as FA;
 				if (null != fa)
 				{
-					EmitPart(fa, l);
-				} else
-				{
-					EmitPart(expressions[i], l);
-
+					EmitFAPart(fa, l);
 				}
-				parts[i] = new KeyValuePair<int,int[][]>(i,l.ToArray());
+				else
+				{
+					EmitAstInnerPart(ordered[i] as Ast, l);
+					var save = new int[] { Save, 1 };
+					l.Add(save);
+					var match = new int[2];
+					match[0] = Match;
+					match[1] = i;
+					l.Add(match);
+				}
+				fragments.Add(l.ToArray());
 			}
-			var result =  EmitLexer(parts);
+			var result =  _EmitLexer(fragments);
 			if(optimize)
 			{
 				result = new List<int[]>(RemoveDeadCode(result)).ToArray();
@@ -795,6 +897,52 @@ namespace L
 			match[1] = -1;
 			prog.Add(match);
 			
+			return prog.ToArray();
+		}
+		internal static int[][] _EmitLexer(IEnumerable<int[][]> frags)
+		{
+			var l = new List<int[][]>(frags);
+			var prog = new List<int[]>();
+			int[] match, save;
+			// save 0
+			save = new int[2];
+			save[0] = Save;
+			save[1] = 0;
+			prog.Add(save);
+
+			// generate the primary jmp instruction
+			var jmp = new int[l.Count + 2];
+			jmp[0] = Compiler.Jmp;
+			prog.Add(jmp);
+			// for each expressions, render a save 0
+			// followed by the the instructions
+			// followed by save 1, and then match <i>
+			for (int ic = l.Count, i = 0; i < ic; ++i)
+			{
+				jmp[i + 1] = prog.Count;
+
+				// expr
+				Fixup(l[i], prog.Count);
+				prog.AddRange(l[i]);
+			}
+			// generate the error condition
+			// handling
+			jmp[jmp.Length - 1] = prog.Count;
+			// any
+			var any = new int[1];
+			any[0] = Any;
+			prog.Add(any);
+			// save 1
+			save = new int[2];
+			save[0] = Save;
+			save[1] = 1;
+			prog.Add(save);
+			// match -1
+			match = new int[2];
+			match[0] = Match;
+			match[1] = -1;
+			prog.Add(match);
+
 			return prog.ToArray();
 		}
 		internal static void SortRanges(int[] ranges)

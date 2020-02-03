@@ -39,7 +39,7 @@ namespace L
 				result[i] = asts[i].ToFA(match);
 			return result;
 		}
-		public FA ToFA(int match = 0)
+		public FA ToFA(int match)
 		{
 			Ast ast = this;
 			if (ast.IsLazy)
@@ -67,15 +67,15 @@ namespace L
 					pairl = new List<KeyValuePair<int, int>>(RangeUtility.NotRanges(pairs));
 					return FA.Set(RangeUtility.FromPairs(pairl), match);
 				case Ast.Opt:
-					return FA.Optional(ast.Exprs[0].ToFA(), match);
+					return FA.Optional(ast.Exprs[0].ToFA(match), match);
 				case Ast.Plus:
-					return FA.Repeat(ast.Exprs[0].ToFA(), 1, 0, match);
+					return FA.Repeat(ast.Exprs[0].ToFA(match), 1, 0, match);
 				case Ast.Rep:
-					return FA.Repeat(ast.Exprs[0].ToFA(), ast.Min, ast.Max, match);
+					return FA.Repeat(ast.Exprs[0].ToFA(match), ast.Min, ast.Max, match);
 				case Ast.Set:
 					return FA.Set(ast.Ranges, match);
 				case Ast.Star:
-					return FA.Repeat(ast.Exprs[0].ToFA(), 0, 0, match);
+					return FA.Repeat(ast.Exprs[0].ToFA(match), 0, 0, match);
 				case Ast.UCode:
 					return FA.Set(CharacterClasses.UnicodeCategories[ast.Value], match);
 				default:
