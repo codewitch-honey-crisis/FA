@@ -362,6 +362,7 @@ namespace L
 			for(int ic=l.Count,i=0;i<ic;++i)
 			{
 				var cfa = l[i];
+				
 				rendered.Add(cfa, prog.Count);
 				if (!cfa.IsFinal)
 				{
@@ -372,7 +373,8 @@ namespace L
 			}
 			for(int ic=l.Count,i=0;i<ic;++i)
 			{
-				var cfa = l[i];
+				var cfa =  l[i];
+				
 				if (!cfa.IsFinal)
 				{
 					
@@ -387,8 +389,23 @@ namespace L
 						sw.Add(-1);
 						sw.Add(dst);
 					}
-						
-					
+					if (1 < sw.Count)
+					{
+						if (0 < cfa.EpsilonTransitions.Count)
+						{
+							sw.Add(-2);
+							foreach (var efa in cfa.EpsilonTransitions)
+							{
+								var dst = rendered[efa];
+								sw.Add(dst);
+							}
+						}
+					} else
+					{
+						// basically a NOP. Will get removed
+						sw[0] = Jmp;
+						sw.Add(swFixups[cfa] + 1);
+					}
 					prog[swFixups[cfa]] = sw.ToArray();
 				}
 				
@@ -401,9 +418,7 @@ namespace L
 					prog[jfi] = jmp;
 				}
 				
-				
 			}
-			
 			
 		}
 		static void _EmitPart(FA fa,IDictionary<FA,int> rendered, IList<int[]> prog)
@@ -653,19 +668,20 @@ namespace L
 			var result =  EmitLexer(parts);
 			if(optimize)
 			{
-				result = _RemoveDeadCode(result);
+				result = new List<int[]>(RemoveDeadCode(result)).ToArray();
 			}
 			return result;
 		}
 
-		static int[][] _RemoveDeadCode(int[][] prog)
+		internal static IList<int[]> RemoveDeadCode(IList<int[]> prog)
 		{
+			
 			var done = false;
 			while(!done)
 			{
 				done = true;
 				var toRemove = -1;
-				for(var i = 0;i<prog.Length;++i)
+				for(var i = 0;i<prog.Count;++i)
 				{
 					var pc = prog[i];
 					// remove L0001: jmp L0002
@@ -678,7 +694,7 @@ namespace L
 				if(-1!=toRemove)
 				{
 					done = false;
-					var newProg = new List<int[]>(prog.Length-1);
+					var newProg = new List<int[]>(prog.Count-1);
 					for(var i = 0;i<toRemove;++i)
 					{
 						var inst = prog[i];
@@ -714,8 +730,8 @@ namespace L
 						}
 						newProg.Add(prog[i]);
 					}
-					var progNext = new List<int[]>(prog.Length - toRemove - 1);
-					for(var i = toRemove+1;i<prog.Length;i++)
+					var progNext = new List<int[]>(prog.Count - toRemove - 1);
+					for(var i = toRemove+1;i<prog.Count;i++)
 					{
 						progNext.Add(prog[i]);
 					}

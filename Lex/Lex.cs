@@ -129,6 +129,7 @@ namespace L
 				if (null != fa)
 				{
 					Compiler.EmitPart(fa, prog);
+					prog=new List<int[]>(Compiler.RemoveDeadCode(prog));
 					return prog.ToArray();
 				}
 			}
