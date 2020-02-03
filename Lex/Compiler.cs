@@ -337,8 +337,6 @@ namespace L
 
 		internal static void EmitPart(FA fa,IList<int[]> prog)
 		{
-			// TODO: Make sure this is an actual GNFA and not just an NFA
-			// NFA that is not a GNFA will not work
 			fa = fa.ToDfa();
 			fa.TrimDuplicates();
 			fa = fa.ToGnfa();
@@ -450,7 +448,7 @@ namespace L
 				sw[0] = Jmp;
 			foreach(var efa in fa.EpsilonTransitions)
 			{
-				var dst = -1;
+				int dst;
 				if (!rendered.TryGetValue(efa, out dst))
 				{
 					dst = prog.Count;
