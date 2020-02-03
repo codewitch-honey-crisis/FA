@@ -11,16 +11,6 @@ namespace LexDemo
 	{
 		static void Main()
 		{
-			var @int = @"0|(\-?[1-9][0-9]*)";
-			var prog = Lex.CompileRegexPart(@int,true);
-			//prog = Lex.FinalizePart(prog);
-			Console.WriteLine(Lex.Disassemble(prog));
-			var result = 0;
-			//Lex.RunWithLoggingAndStatistics(prog, LexContext.Create("123"), Console.Out, out result);
-			Console.WriteLine(result);
-		}
-		static void Main2()
-		{
 			var test = "fubar bar 123 1foo bar -243 0 baz 83";
 			Console.WriteLine("Lex: " + test);
 			var prog = Lex.CompileLexerRegex(false,
@@ -97,15 +87,20 @@ namespace LexDemo
 			{
 				Console.WriteLine("Pass #" + (i + 1));
 				Console.Write("NFA: ");
-				Perf(prog, test);
+				_Perf(prog, test);
+				Console.WriteLine();
 				Console.Write("NFA+DFA (optimized): ");
-				Perf(progOpt, test);
-				
+				_Perf(progOpt, test);
+				Console.WriteLine();
 				Console.Write("DFA: ");
-				Perf(progDfa, test);
+				_Perf(progDfa, test);
+				Console.WriteLine();
+				Console.WriteLine();
 			}
+			Console.WriteLine();
+			_RunLexer();
 		}
-		static void Perf(int[][] prog,string test)
+		static void _Perf(int[][] prog,string test)
 		{
 			var sw = PrecisionDateTime.IsAvailable?null:new Stopwatch();
 			DateTime utcStart;
@@ -139,45 +134,7 @@ namespace LexDemo
 			ConsoleUtility.EraseProgressBar();
 			Console.WriteLine("Lexed in " + elapsed.TotalMilliseconds / (float)ITER + " msec");
 		}
-		static void Test()
-		{
-			var test = "switch case \"a\":L0001, case \"b\":L0002, default: L0004\r\n" +
-				"L0001: char \"b\"\r\n" +
-				"L0002: char \"c\"\r\n" +
-				"L0003: match 1\r\n" +
-				"L0004: any\r\n" +
-				"L0005: match -1\r\n";
-			
-			var prog = Lex.AssembleFrom(@"..\..\int.lasm");
-			
-			//Console.WriteLine(Lex.Disassemble(prog));
-			var lc = LexContext.Create("1000");
-			//Console.WriteLine("{0}: {1}",Lex.Run(prog,lc),lc.GetCapture());
-			//
-			//"((\\(['\\"abfnrtv0]|[0-7]{3}|x[0-9A-Fa-f]{2}|u[0-9A-Fa-f]{4}|U[0-9A-Fa-f]{8}))|[^\\"])*"
-			test = @"""((\\(['\\""abfnrtv0]|[0-7]{3}|x[0-9A-Fa-f]{2}|u[0-9A-Fa-f]{4}|U[0-9A-Fa-f]{8}))|[^\\""])*""";
-			//Lex.RenderGraph(LexContext.Create(test),@"..\..\string_nfa.jpg");
-			prog = Lex.CompileRegexPart(test);
-			prog = Lex.FinalizePart(prog);
-			Console.WriteLine(Lex.Disassemble(prog));
-			test = "\"\\\"\\tHello World!\\\"\"";
-			lc = LexContext.Create(test);
-			var result = 0;
-			Lex.RunWithLoggingAndStatistics(prog, lc, Console.Error, out result);
-			if (-1 != result)
-			{
-				Console.Write("Matched " + test + ": ");
-				Console.WriteLine(lc.GetCapture());
-			}
-			else
-			{
-				Console.Write("Matched " + test + ": ");
-				Console.WriteLine("False - failed at position " + lc.Position);
-			}
-			return;
-			
-			_RunLexer();
-		}
+
 		
 		static void _RunLexer()
 		{
@@ -205,23 +162,11 @@ namespace LexDemo
 			{
 				// clear any current captured data
 				lc.ClearCapture();
+				int acc;
+				var stat = Lex.RunWithLoggingAndStatistics(prog, lc, Console.Error, out acc);
 				// lex our next input and dump it
-				Console.WriteLine("{0}: \"{1}\"", Lex.Run(prog, lc), lc.GetCapture());
+				Console.WriteLine("{0}: \"{1}\"", acc, lc.GetCapture());
 			}
-			var sw = new Stopwatch();
-			const int ITER = 1000;
-			for(var i = 0;i<ITER;++i)
-			{
-				lc = LexContext.Create(text);
-				while (LexContext.EndOfInput != lc.Current)
-				{
-					lc.ClearCapture();
-					sw.Start();
-					var acc = Lex.Run(prog, lc);
-					sw.Stop();
-				}
-			}
-			Console.WriteLine("Lexed in " + sw.ElapsedMilliseconds / (float)ITER + " msec");
 		}
 	}
 }
