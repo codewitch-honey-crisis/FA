@@ -339,13 +339,9 @@ namespace L
 		{
 			// TODO: Make sure this is an actual GNFA and not just an NFA
 			// NFA that is not a GNFA will not work
-			fa.RenderToFile(@"..\..\emit_nfa.jpg");
-
 			fa = fa.ToDfa();
 			fa.TrimDuplicates();
-			fa.RenderToFile(@"..\..\emit_dfa.jpg");
 			fa = fa.ToGnfa();
-			fa.RenderToFile(@"..\..\emit_gnfa.jpg");
 			if (fa.IsNeutral)
 			{
 				foreach (var efa in fa.EpsilonTransitions)
