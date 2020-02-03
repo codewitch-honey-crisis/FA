@@ -424,7 +424,7 @@ namespace Lexly
 							++idx;
 							while (idx < pc.Length)
 							{
-								_EnqueueFiber(ref currentFiberCount, ref _currentFibers, new TokenizerFiber(t, pc[idx], saved), sp);
+								_EnqueueFiber(ref nextFiberCount, ref _nextFibers, new TokenizerFiber(t, pc[idx], saved), sp);
 								++idx;
 							}
 						}

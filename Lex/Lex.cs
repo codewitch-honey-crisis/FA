@@ -299,7 +299,7 @@ namespace L
 								++idx;
 								while(idx<pc.Length)
 								{
-									_EnqueueFiber(ref currentFiberCount, ref currentFibers, new _Fiber(t, pc[idx], saved), sp);
+									_EnqueueFiber(ref nextFiberCount, ref nextFibers, new _Fiber(t, pc[idx], saved), sp);
 									++idx;
 								}
 							}

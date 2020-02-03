@@ -424,7 +424,7 @@ namespace LexlyDemo {
                             for (
                             ; (idx < pc.Length); 
                             ) {
-                                TokenizerEnumerator._EnqueueFiber(ref currentFiberCount, ref this._currentFibers, new TokenizerFiber(t, pc[idx], saved), sp);
+                                TokenizerEnumerator._EnqueueFiber(ref nextFiberCount, ref this._nextFibers, new TokenizerFiber(t, pc[idx], saved), sp);
                                 idx = (idx + 1);
                             }
                         }
@@ -617,31 +617,31 @@ namespace LexlyDemo {
                         -1,
                         9},
                 new int[] {
-                        3,
-                        45,
-                        45,
-                        -1,
-                        10,
-                        -2,
-                        10},
-                new int[] {
-                        3,
-                        49,
-                        57,
-                        -1,
-                        11},
-                new int[] {
-                        3,
-                        48,
-                        57,
-                        -1,
-                        12},
-                new int[] {
                         10,
                         1},
                 new int[] {
                         1,
                         0},
+                new int[] {
+                        3,
+                        45,
+                        45,
+                        -1,
+                        12,
+                        -2,
+                        12},
+                new int[] {
+                        3,
+                        49,
+                        57,
+                        -1,
+                        13},
+                new int[] {
+                        3,
+                        48,
+                        57,
+                        -1,
+                        14},
                 new int[] {
                         10,
                         1},
