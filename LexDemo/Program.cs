@@ -9,43 +9,34 @@ namespace LexDemo
 {
 	class Program
 	{
-		static void Main2()
+		static void Main()
 		{
-			var id = @"[A-Z_a-z][A-Z_a-z0-9]*";
 			var @int = @"0|(\-?[1-9][0-9]*)";
-			var space = @"( |\t|\r|\n|\v|\f)";
-			Lex.RenderOptimizedExecutionGraph(id, @"..\..\id_nfa.jpg");
-			Lex.RenderOptimizedExecutionGraph(@int, @"..\..\int_nfa.jpg");
-			Lex.RenderOptimizedExecutionGraph(@space, @"..\..\space_nfa.jpg");
-			var prog = Lex.CompileLexerRegex(true,
-				 id, // id
-				 @int, // int
-				 space // space
-			 );
-			prog = Lex.CompileRegexPart(@int,true);
-			prog = Lex.FinalizePart(prog);
+			var prog = Lex.CompileRegexPart(@int,true);
+			//prog = Lex.FinalizePart(prog);
 			Console.WriteLine(Lex.Disassemble(prog));
 			var result = 0;
-			Lex.RunWithLoggingAndStatistics(prog, LexContext.Create("123"), Console.Out, out result);
+			//Lex.RunWithLoggingAndStatistics(prog, LexContext.Create("123"), Console.Out, out result);
 			Console.WriteLine(result);
 		}
-		static void Main()
+		static void Main2()
 		{
 			var test = "fubar bar 123 1foo bar -243 0 baz 83";
 			Console.WriteLine("Lex: " + test);
 			var prog = Lex.CompileLexerRegex(false,
-				 @"[A-Z_a-z][A-Z_a-z0-9]*", // id
-				 @"0|(\-?[1-9][0-9]*)", // int
-				 @"( |\t|\r|\n|\v|\f)" // space
-			 );
+					@"[A-Z_a-z][A-Z_a-z0-9]*", // id
+					@"0|(\-?[1-9][0-9]*)", // int
+					@"( |\t|\r|\n|\v|\f)" // space
+				);
 			Console.WriteLine("Unoptimized dump:");
 			Console.WriteLine(Lex.Disassemble(prog));
 			Console.WriteLine();
+
 			var progOpt = Lex.CompileLexerRegex(true,
-				 @"[A-Z_a-z][A-Z_a-z0-9]*", // id
-				 @"0|(\-?[1-9][0-9]*)", // int
-				 @"( |\t|\r|\n|\v|\f)" // space
-			 );
+					@"[A-Z_a-z][A-Z_a-z0-9]*", // id
+					@"0|(\-?[1-9][0-9]*)", // int
+					@"( |\t|\r|\n|\v|\f)" // space
+				);
 
 			Console.WriteLine("Optimized dump:");
 			Console.WriteLine(Lex.Disassemble(progOpt));
@@ -67,7 +58,7 @@ namespace LexDemo
 					avgCharPasses = stats.AverageCharacterPasses;
 
 				++count;
-}
+			}
 			Console.WriteLine("NFA ran with "+maxFiberCount+" max fibers and " + avgCharPasses+ " average char passes");
 			count = 0f;
 			maxFiberCount = 0;

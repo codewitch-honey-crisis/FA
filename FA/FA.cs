@@ -187,7 +187,7 @@ namespace F
 		public FA ToGnfa(int accept=-1)
 		{
 			var fa = Clone();
-			var accepting = FillAcceptingStates();
+			var accepting = fa.FillAcceptingStates();
 			
 			if(1<accepting.Count)
 			{
@@ -215,6 +215,7 @@ namespace F
 				last.IsAccepting = false;
 				last.EpsilonTransitions.Add(new FA(true,accept));
 			}
+
 			if (!fa.IsNeutral) 
 			{
 				// add a neutral transition to the beginning

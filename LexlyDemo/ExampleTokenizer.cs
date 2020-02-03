@@ -577,8 +577,8 @@ namespace LexlyDemo {
                         2,
                         2,
                         8,
-                        13,
-                        16},
+                        14,
+                        17},
                 new int[] {
                         6,
                         65,
@@ -633,13 +633,11 @@ namespace LexlyDemo {
                 new int[] {
                         3,
                         48,
-                        48,
-                        -1,
-                        11,
-                        49,
                         57,
                         -1,
                         10},
+                new int[] {
+                        3},
                 new int[] {
                         10,
                         1},
@@ -653,7 +651,7 @@ namespace LexlyDemo {
                         32,
                         32,
                         -1,
-                        14},
+                        15},
                 new int[] {
                         10,
                         1},

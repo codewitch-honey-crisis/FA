@@ -13,6 +13,7 @@ namespace LexlyDemo
 	{
 		static void Main(string[] args)
 		{
+			
 			var text = "foo 123 bar";
 
 			using (var sr = new StreamReader(@"..\..\Program.cs"))
@@ -32,7 +33,7 @@ namespace LexlyDemo
 			}
 			
 			Stopwatch sw = new Stopwatch();
-			const int ITER = 100;
+			const int ITER = 1000;
 			for (var i = 0; i < ITER; ++i)
 			{
 				var lc = LexContext.Create(text);

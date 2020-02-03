@@ -881,10 +881,10 @@ var result=fa;while(_TryForwardNeutral(result,out result));return result;}/// <s
 /// <param name="accept">The accept symbol</param>
 /// <returns>A new GNFA state machine that accepts the same language</returns>
 /// <remarks>A generalized NFA has a single start state and a single accept state that is final.</remarks>
-public FA ToGnfa(int accept=-1){var fa=Clone();var accepting=FillAcceptingStates();if(1<accepting.Count){var newFinal=new FA(true,accept);foreach(var afa
- in accepting){afa.IsAccepting=false;afa.EpsilonTransitions.Add(newFinal);}}else{foreach(var afa in accepting){afa.AcceptSymbol=accept;}} var last=fa.FirstAcceptingState;
-if(!last.IsFinal){ last.IsAccepting=false;last.EpsilonTransitions.Add(new FA(true,accept));}if(!fa.IsNeutral){ var nfa=new FA();nfa.EpsilonTransitions.Add(fa);
-fa=nfa;}return fa;}/// <summary>
+public FA ToGnfa(int accept=-1){var fa=Clone();var accepting=fa.FillAcceptingStates();if(1<accepting.Count){var newFinal=new FA(true,accept);foreach(var
+ afa in accepting){afa.IsAccepting=false;afa.EpsilonTransitions.Add(newFinal);}}else{foreach(var afa in accepting){afa.AcceptSymbol=accept;}} var last
+=fa.FirstAcceptingState;if(!last.IsFinal){ last.IsAccepting=false;last.EpsilonTransitions.Add(new FA(true,accept));}if(!fa.IsNeutral){ var nfa=new FA();
+nfa.EpsilonTransitions.Add(fa);fa=nfa;}return fa;}/// <summary>
 /// Builds a simple lexer using the specified FA expressions
 /// </summary>
 /// <param name="expressions">The FSMs/expressions to compose the lexer from</param>
