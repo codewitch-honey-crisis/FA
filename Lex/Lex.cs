@@ -580,7 +580,6 @@ namespace L
 						var ch1 = unchecked((char)input.Current);
 						if (char.IsHighSurrogate(ch1))
 						{
-							input.Advance();
 							if (-1 == input.Advance())
 								throw new ExpectingException("Expecting low surrogate in unicode stream. The input source is corrupt or not valid Unicode", input.Line, input.Column, input.Position, input.FileOrUrl);
 							++sp;

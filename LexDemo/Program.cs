@@ -1,5 +1,5 @@
-﻿#define RUNPERF
-#define VERBOSE
+﻿//#define RUNPERF
+//#define VERBOSE
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -178,7 +178,6 @@ namespace LexDemo
 					TextWriter.Null
 #endif
 					,out acc);
-				acc = Lex.Run(prog, lc);
 				// lex our next input and dump it
 				Console.WriteLine("{0}: \"{1}\"", acc, lc.GetCapture());
 			}
