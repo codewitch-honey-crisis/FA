@@ -178,12 +178,12 @@ namespace L
 		/// <returns>A program</returns>
 		public static int[][] CompileLexerRegex(bool optimize,params string[] expressions)
 		{
-			var asts = new Ast[expressions.Length];
+			var asts = new KeyValuePair<int,object>[expressions.Length];
 			for(var i = 0;i<expressions.Length;++i)
-				asts[i] = Ast.Parse(LexContext.Create(expressions[i]));
-			return Compiler.EmitLexer(optimize,asts);
+				asts[i] = new KeyValuePair<int, object>(i, Ast.Parse(LexContext.Create(expressions[i])));
+			return Compiler.EmitLexer( optimize,asts);
 		}
-		public static int[][] CompileLexer(bool optimize,params object[] parts)
+		public static int[][] CompileLexer(bool optimize,params KeyValuePair<int,object>[] parts)
 		{
 			return Compiler.EmitLexer(optimize, parts);
 		}

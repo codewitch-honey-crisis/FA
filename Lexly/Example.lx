@@ -1,4 +1,4 @@
-﻿id {
+﻿id<id=10> {
    regex ([A-Z_a-z])
    regex ([0-9A-Z_a-z]*)
 }

@@ -266,37 +266,38 @@ j=_AppendRanges(sb,inst,j);++j;sb.Append(":");sb.Append(_FmtLbl(inst[j]));++j;}i
 else sb.Append("nset ");for(var i=1;i<inst.Length-1;i++){if(1!=i)sb.Append(", ");if(inst[i]==inst[i+1])sb.Append(_ToStr(inst[i]));else{sb.Append(_ToStr(inst[i]));
 sb.Append("..");sb.Append(_ToStr(inst[i+1]));}++i;}return sb.ToString();case Any:return"any";case Match:return"match "+inst[1].ToString();case Save:return
 "save "+inst[1].ToString();default:throw new InvalidProgramException("The instruction is not valid");}} internal static int[][]EmitLexer(bool optimize,
-params object[]expressions){var fragments=new List<int[][]>(expressions.Length);var ordered=new List<object>(); var i=0;if(optimize){var workingFA=new
- List<FA>();while(i<expressions.Length){while(i<expressions.Length){var ast=expressions[i]as Ast;if(null==ast){var str=expressions[i]as string;if(null
-!=str)ast=Ast.FromLiteral(str);}if(null!=ast){FA fa=null;try{fa=ast.ToFA(i);} catch(NotSupportedException){}if(null==fa){if(0<workingFA.Count){ordered.Add(workingFA);
-workingFA=new List<FA>();}break;}workingFA.Add(fa);}else break;++i;}if(i==expressions.Length){if(0<workingFA.Count){ordered.Add(workingFA);workingFA=new
- List<FA>();}}while(i<expressions.Length){var ast=expressions[i]as Ast;if(null==ast){var str=expressions[i]as string;if(null!=str)ast=Ast.FromLiteral(str);
-}if(null!=ast){FA fa;try{fa=ast.ToFA(i);workingFA.Add(fa);++i;if(i==expressions.Length)ordered.Add(workingFA);break;}catch{}}ordered.Add(expressions[i]);
-++i;}}i=0;for(int ic=ordered.Count;i<ic;++i){var l=ordered[i]as List<FA>;if(null!=l){var root=new FA();for(int jc=l.Count,j=0;j<jc;++j){root.EpsilonTransitions.Add(l[j]);
-}root=root.ToDfa();root.TrimDuplicates();ordered[i]=root;}}}else{for(i=0;i<expressions.Length;++i){ordered.Add(expressions[i]);}}i=0;for(var ic=ordered.Count;i<ic;++i)
-{var l=new List<int[]>();var fa=ordered[i]as FA;if(null!=fa){EmitFAPart(fa,l);}else{var ast=ordered[i]as Ast;if(null!=ast){EmitAstInnerPart(ordered[i]
-as Ast,l);var save=new int[]{Save,1};l.Add(save);var match=new int[2];match[0]=Match;match[1]=i;l.Add(match);}else{var frag=ordered[i]as int[][];Fixup(frag,
-l.Count);l.AddRange(frag); var save=new int[]{Save,1};l.Add(save);var match=new int[2];match[0]=Match;match[1]=i;l.Add(match);}}fragments.Add(l.ToArray());
-}var result=_EmitLexer(fragments);if(optimize){result=new List<int[]>(RemoveDeadCode(result)).ToArray();}return result;}internal static IList<int[]>RemoveDeadCode(IList<int[]>
-prog){var done=false;while(!done){done=true;var toRemove=-1;for(var i=0;i<prog.Count;++i){var pc=prog[i]; if(Jmp==pc[0]&&i+1==pc[1]&&2==pc.Length){toRemove
-=i;break;}}if(-1!=toRemove){done=false;var newProg=new List<int[]>(prog.Count-1);for(var i=0;i<toRemove;++i){var inst=prog[i];switch(inst[0]){case Switch:
-var inDef=false;for(var j=0;j<inst.Length;j++){if(inDef){if(inst[j]>toRemove)--inst[j];}else{if(-1==inst[j]){++j;if(inst[j]>toRemove)--inst[j];}else if
-(-2==inst[j])inDef=true;}}break;case Jmp:for(var j=1;j<inst.Length;j++)if(inst[j]>toRemove)--inst[j];break;}newProg.Add(prog[i]);}var progNext=new List<int[]>(prog.Count
--toRemove-1);for(var i=toRemove+1;i<prog.Count;i++){progNext.Add(prog[i]);}var pna=progNext.ToArray();Fixup(pna,-1);newProg.AddRange(pna);prog=newProg.ToArray();
-}}return prog;}internal static int[][]EmitLexer(IEnumerable<KeyValuePair<int,int[][]>>parts){var l=new List<KeyValuePair<int,int[][]>>(parts);var prog
-=new List<int[]>();int[]match,save; save=new int[2];save[0]=Save;save[1]=0;prog.Add(save); var jmp=new int[l.Count+2];jmp[0]=Compiler.Jmp;prog.Add(jmp);
- for(int ic=l.Count,i=0;i<ic;++i){jmp[i+1]=prog.Count; Fixup(l[i].Value,prog.Count);prog.AddRange(l[i].Value); save=new int[2];save[0]=Save;save[1]=1;
-prog.Add(save); match=new int[2];match[0]=Match;match[1]=l[i].Key;prog.Add(match);} jmp[jmp.Length-1]=prog.Count; var any=new int[1];any[0]=Any;prog.Add(any);
- save=new int[2];save[0]=Save;save[1]=1;prog.Add(save); match=new int[2];match[0]=Match;match[1]=-1;prog.Add(match);return prog.ToArray();}internal static
- int[][]_EmitLexer(IEnumerable<int[][]>frags){var l=new List<int[][]>(frags);var prog=new List<int[]>();int[]match,save; save=new int[2];save[0]=Save;
-save[1]=0;prog.Add(save); var jmp=new int[l.Count+2];jmp[0]=Compiler.Jmp;prog.Add(jmp); for(int ic=l.Count,i=0;i<ic;++i){jmp[i+1]=prog.Count; Fixup(l[i],
-prog.Count);prog.AddRange(l[i]);} jmp[jmp.Length-1]=prog.Count; var any=new int[1];any[0]=Any;prog.Add(any); save=new int[2];save[0]=Save;save[1]=1;prog.Add(save);
- match=new int[2];match[0]=Match;match[1]=-1;prog.Add(match);return prog.ToArray();}internal static void SortRanges(int[]ranges){var result=new List<KeyValuePair<int,
-int>>(ranges.Length/2);for(var i=0;i<ranges.Length-1;++i){var ch=ranges[i];++i;result.Add(new KeyValuePair<int,int>(ch,ranges[i]));}result.Sort((x,y)=>
-{return x.Key.CompareTo(y.Key);});for(int ic=result.Count,i=0;i<ic;++i){var j=i*2;var kvp=result[i];ranges[j]=kvp.Key;ranges[j+1]=kvp.Value;}}static int[]
-_GetFirsts(int[][]part,int index){if(part.Length<=index)return new int[0];int idx;List<int>resl;int[]result;var pc=part[index];switch(pc[0]){case Char:
-return new int[]{pc[1],pc[1]};case Set:result=new int[pc.Length-1];Array.Copy(pc,1,result,0,result.Length);return result;case NSet:result=new int[pc.Length
--1];Array.Copy(pc,1,result,0,result.Length);return RangeUtility.FromPairs(new List<KeyValuePair<int,int>>(RangeUtility.NotRanges(RangeUtility.ToPairs(result))));
+params KeyValuePair<int,object>[]expressions){var fragments=new List<int[][]>(expressions.Length);var ordered=new List<object>(); var i=0;if(optimize)
+{var workingFA=new List<FA>();while(i<expressions.Length){while(i<expressions.Length){var ast=expressions[i].Value as Ast;if(null==ast){var str=expressions[i].Value
+ as string;if(null!=str)ast=Ast.FromLiteral(str);}if(null!=ast){FA fa=null;try{fa=ast.ToFA(expressions[i].Key);} catch(NotSupportedException){}if(null
+==fa){if(0<workingFA.Count){ordered.Add(workingFA);workingFA=new List<FA>();}break;}workingFA.Add(fa);}else break;++i;}if(i==expressions.Length){if(0<
+workingFA.Count){ordered.Add(workingFA);workingFA=new List<FA>();}}while(i<expressions.Length){var ast=expressions[i].Value as Ast;if(null==ast){var str
+=expressions[i].Value as string;if(null!=str)ast=Ast.FromLiteral(str);}if(null!=ast){FA fa;try{fa=ast.ToFA(expressions[i].Key);workingFA.Add(fa);++i;if
+(i==expressions.Length)ordered.Add(workingFA);break;}catch{}}ordered.Add(expressions[i]);++i;}}i=0;for(int ic=ordered.Count;i<ic;++i){var l=ordered[i]
+as List<FA>;if(null!=l){var root=new FA();for(int jc=l.Count,j=0;j<jc;++j){root.EpsilonTransitions.Add(l[j]);}root=root.ToDfa();root.TrimDuplicates();
+ordered[i]=root;}}}else{for(i=0;i<expressions.Length;++i){ordered.Add(expressions[i]);}}i=0;for(var ic=ordered.Count;i<ic;++i){var l=new List<int[]>();
+var fa=ordered[i]as FA;if(null!=fa){EmitFAPart(fa,l);}else{if(ordered[i]is KeyValuePair<int,object>){var kvp=(KeyValuePair<int,object>)ordered[i];var ast
+=kvp.Value as Ast;if(null!=ast){EmitAstInnerPart(ast,l);var save=new int[]{Save,1};l.Add(save);var match=new int[2];match[0]=Match;match[1]=kvp.Key;l.Add(match);
+}else{var frag=kvp.Value as int[][];Fixup(frag,l.Count);l.AddRange(frag); var save=new int[]{Save,1};l.Add(save);var match=new int[2];match[0]=Match;match[1]
+=kvp.Key;l.Add(match);}}}fragments.Add(l.ToArray());}var result=_EmitLexer(fragments);if(optimize){result=new List<int[]>(RemoveDeadCode(result)).ToArray();
+}return result;}internal static IList<int[]>RemoveDeadCode(IList<int[]>prog){var done=false;while(!done){done=true;var toRemove=-1;for(var i=0;i<prog.Count;++i)
+{var pc=prog[i]; if(Jmp==pc[0]&&i+1==pc[1]&&2==pc.Length){toRemove=i;break;}}if(-1!=toRemove){done=false;var newProg=new List<int[]>(prog.Count-1);for(var
+ i=0;i<toRemove;++i){var inst=prog[i];switch(inst[0]){case Switch:var inDef=false;for(var j=0;j<inst.Length;j++){if(inDef){if(inst[j]>toRemove)--inst[j];
+}else{if(-1==inst[j]){++j;if(inst[j]>toRemove)--inst[j];}else if(-2==inst[j])inDef=true;}}break;case Jmp:for(var j=1;j<inst.Length;j++)if(inst[j]>toRemove)
+--inst[j];break;}newProg.Add(prog[i]);}var progNext=new List<int[]>(prog.Count-toRemove-1);for(var i=toRemove+1;i<prog.Count;i++){progNext.Add(prog[i]);
+}var pna=progNext.ToArray();Fixup(pna,-1);newProg.AddRange(pna);prog=newProg.ToArray();}}return prog;}internal static int[][]EmitLexer(IEnumerable<KeyValuePair<int,int[][]>>
+parts){var l=new List<KeyValuePair<int,int[][]>>(parts);var prog=new List<int[]>();int[]match,save; save=new int[2];save[0]=Save;save[1]=0;prog.Add(save);
+ var jmp=new int[l.Count+2];jmp[0]=Compiler.Jmp;prog.Add(jmp); for(int ic=l.Count,i=0;i<ic;++i){jmp[i+1]=prog.Count; Fixup(l[i].Value,prog.Count);prog.AddRange(l[i].Value);
+ save=new int[2];save[0]=Save;save[1]=1;prog.Add(save); match=new int[2];match[0]=Match;match[1]=l[i].Key;prog.Add(match);} jmp[jmp.Length-1]=prog.Count;
+ var any=new int[1];any[0]=Any;prog.Add(any); save=new int[2];save[0]=Save;save[1]=1;prog.Add(save); match=new int[2];match[0]=Match;match[1]=-1;prog.Add(match);
+return prog.ToArray();}internal static int[][]_EmitLexer(IEnumerable<int[][]>frags){var l=new List<int[][]>(frags);var prog=new List<int[]>();int[]match,
+save; save=new int[2];save[0]=Save;save[1]=0;prog.Add(save); var jmp=new int[l.Count+2];jmp[0]=Compiler.Jmp;prog.Add(jmp); for(int ic=l.Count,i=0;i<ic;
+++i){jmp[i+1]=prog.Count; Fixup(l[i],prog.Count);prog.AddRange(l[i]);} jmp[jmp.Length-1]=prog.Count; var any=new int[1];any[0]=Any;prog.Add(any); save
+=new int[2];save[0]=Save;save[1]=1;prog.Add(save); match=new int[2];match[0]=Match;match[1]=-1;prog.Add(match);return prog.ToArray();}internal static void
+ SortRanges(int[]ranges){var result=new List<KeyValuePair<int,int>>(ranges.Length/2);for(var i=0;i<ranges.Length-1;++i){var ch=ranges[i];++i;result.Add(new
+ KeyValuePair<int,int>(ch,ranges[i]));}result.Sort((x,y)=>{return x.Key.CompareTo(y.Key);});for(int ic=result.Count,i=0;i<ic;++i){var j=i*2;var kvp=result[i];
+ranges[j]=kvp.Key;ranges[j+1]=kvp.Value;}}static int[]_GetFirsts(int[][]part,int index){if(part.Length<=index)return new int[0];int idx;List<int>resl;
+int[]result;var pc=part[index];switch(pc[0]){case Char:return new int[]{pc[1],pc[1]};case Set:result=new int[pc.Length-1];Array.Copy(pc,1,result,0,result.Length);
+return result;case NSet:result=new int[pc.Length-1];Array.Copy(pc,1,result,0,result.Length);return RangeUtility.FromPairs(new List<KeyValuePair<int,int>>(RangeUtility.NotRanges(RangeUtility.ToPairs(result))));
 case Any:return new int[]{0,0x10ffff};case UCode:result=CharacterClasses.UnicodeCategories[pc[1]];return result;case NUCode:result=CharacterClasses.UnicodeCategories[pc[1]];
 Array.Copy(pc,1,result,0,result.Length);return RangeUtility.FromPairs(new List<KeyValuePair<int,int>>(RangeUtility.NotRanges(RangeUtility.ToPairs(result))));
 case Switch:resl=new List<int>();idx=1;while(pc.Length>idx&&-2!=pc[idx]){if(-1==pc[idx]){idx+=2;continue;}resl.Add(pc[idx]);}if(pc.Length>idx&&-2==pc[idx])
@@ -375,9 +376,9 @@ public static int[][]CompileLiteralPart(string expression){var prog=new List<int
 /// <param name="expressions">The expressions</param>
 /// <param name="optimize">True to generate optimized code, false to use the standard generator</param>
 /// <returns>A program</returns>
-public static int[][]CompileLexerRegex(bool optimize,params string[]expressions){var asts=new Ast[expressions.Length];for(var i=0;i<expressions.Length;++i)
-asts[i]=Ast.Parse(LexContext.Create(expressions[i]));return Compiler.EmitLexer(optimize,asts);}public static int[][]CompileLexer(bool optimize,params object[]
-parts){return Compiler.EmitLexer(optimize,parts);}/// <summary>
+public static int[][]CompileLexerRegex(bool optimize,params string[]expressions){var asts=new KeyValuePair<int,object>[expressions.Length];for(var i=0;i<expressions.Length;++i)
+asts[i]=new KeyValuePair<int,object>(i,Ast.Parse(LexContext.Create(expressions[i])));return Compiler.EmitLexer(optimize,asts);}public static int[][]CompileLexer(bool
+ optimize,params KeyValuePair<int,object>[]parts){return Compiler.EmitLexer(optimize,parts);}/// <summary>
 /// Links a series of partial programs together into single lexer program
 /// </summary>
 /// <param name="parts">The parts</param>

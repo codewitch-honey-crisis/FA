@@ -608,7 +608,7 @@ internal partial class ExampleTokenizer : Tokenizer {
                     1},
             new int[] {
                     1,
-                    0},
+                    10},
             new int[] {
                     3,
                     9,
@@ -634,7 +634,7 @@ internal partial class ExampleTokenizer : Tokenizer {
                     1},
             new int[] {
                     1,
-                    2},
+                    12},
             new int[] {
                     3,
                     49,
@@ -654,13 +654,13 @@ internal partial class ExampleTokenizer : Tokenizer {
                     1},
             new int[] {
                     1,
-                    1},
+                    11},
             new int[] {
                     10,
                     1},
             new int[] {
                     1,
-                    1},
+                    11},
             new int[] {
                     4},
             new int[] {
@@ -672,15 +672,35 @@ internal partial class ExampleTokenizer : Tokenizer {
     internal static string[] BlockEnds = new string[] {
             null,
             null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
             null};
     internal static int[] NodeFlags = new int[] {
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
             0,
             0,
             0};
     public ExampleTokenizer(IEnumerable<char> input) : 
             base(ExampleTokenizer.Program, ExampleTokenizer.BlockEnds, ExampleTokenizer.NodeFlags, input) {
     }
-    public const int id = 0;
-    public const int @int = 1;
-    public const int space = 2;
+    public const int id = 10;
+    public const int @int = 11;
+    public const int space = 12;
 }

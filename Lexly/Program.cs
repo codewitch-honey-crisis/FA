@@ -572,20 +572,20 @@ namespace Lexly
 				Console.Error.WriteLine();
 			}
 #else
-			var exprs = new List<object>();
+			var exprs = new List<KeyValuePair<int,object>>();
 			for(int ic=rules.Count,i = 0;i<ic;++i)
 			{
 				var r = rules[i];
 				if (null != r.Literal)
 				{
-					exprs.Add(r.Literal);
+					exprs.Add(new KeyValuePair<int, object>(r.Id, r.Literal));
 				}
 				else if (null != r.Regex)
 				{
-					exprs.Add(Ast.Parse(LexContext.Create(r.Regex)));
+					exprs.Add(new KeyValuePair<int,object>(r.Id,Ast.Parse(LexContext.Create(r.Regex))));
 				}
 				else
-					exprs.Add(r.Part);
+					exprs.Add(new KeyValuePair<int, object>(r.Id, r.Part));
 			}
 			var prog = Lex.CompileLexer(true, exprs.ToArray());
 			if (dump)
