@@ -23,7 +23,8 @@ namespace L
 		{
 			var ast = Ast.Parse(expression);
 			var fa = ast.ToFA(0);
-			fa.TrimNeutrals();
+			fa.ToDfa();
+			fa.TrimDuplicates();
 			fa.RenderToFile(filename);
 		}
 
