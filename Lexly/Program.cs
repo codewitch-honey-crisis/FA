@@ -1,4 +1,4 @@
-﻿#define OPTIMIZE
+﻿
 using System;
 using System.CodeDom;
 using System.CodeDom.Compiler;
@@ -170,19 +170,19 @@ namespace Lexly
 							td = ccd.Namespaces[1].Types[0];
 							origName += td.Name;
 							td.Name = name;
-							var f = CodeDomUtility.GetByName("Program", td.Members) as CodeMemberField;
-							f.InitExpression = CodeDomUtility.Literal(program);
-							f = CodeDomUtility.GetByName("BlockEnds", td.Members) as CodeMemberField;
-							f.InitExpression = CodeDomUtility.Literal(blockEnds);
-							f = CodeDomUtility.GetByName("NodeFlags", td.Members) as CodeMemberField;
-							f.InitExpression = CodeDomUtility.Literal(nodeFlags);
-							_GenerateSymbolConstants(td, symbolTable);
 						}
-						CodeDomVisitor.Visit(ccd, (ctx) => {
+						CodeDomVisitor.Visit(td, (ctx) => {
 							var tr = ctx.Target as CodeTypeReference;
 							if (null != tr && 0 == string.Compare(origName, tr.BaseType, StringComparison.InvariantCulture))
 								tr.BaseType = name;
 						});
+						var f = CodeDomUtility.GetByName("Program", td.Members) as CodeMemberField;
+						f.InitExpression = CodeDomUtility.Literal(program);
+						f = CodeDomUtility.GetByName("BlockEnds", td.Members) as CodeMemberField;
+						f.InitExpression = CodeDomUtility.Literal(blockEnds);
+						f = CodeDomUtility.GetByName("NodeFlags", td.Members) as CodeMemberField;
+						f.InitExpression = CodeDomUtility.Literal(nodeFlags);
+						_GenerateSymbolConstants(td, symbolTable);
 						cns.Types.Add(td);
 						
 						var hasColNS = false;
@@ -513,18 +513,11 @@ namespace Lexly
 						pc2.EnsureStarted();
 						pc2.SetLocation(pc.Line, pc.Column, pc.Position, pc.FileOrUrl);
 						rule.Regex = pc.GetCapture();
-						// we compile it twice essentially but once for dumping
-						// and pre-validation
-						rule.Part = Lex.CompileRegexPart(pc2,
-							false
-
-							) ;
 						pc.Advance();
 					}
 					else
 					{
 						var str = pc.ParseJsonString();
-						rule.Part = Lex.CompileLiteralPart(str);
 						rule.Literal = str;
 					}
 				} else
@@ -548,30 +541,7 @@ namespace Lexly
 			{
 				Console.WriteLine();
 			}
-			var parts = new KeyValuePair<int,int[][]>[rules.Count];
-			for (var i = 0; i < parts.Length; ++i)
-			{
-				var id = rules[i].Id;
-				var rule = rules[i];
-				parts[i] = new KeyValuePair<int, int[][]>(id, rule.Part);
-				if (dump)
-				{
-					Console.Error.WriteLine("Disassembly of "+rule.Symbol+":");
-					Console.Error.WriteLine(Lex.Disassemble(rule.Part));
-					Console.Error.WriteLine();
-				}
-			}
-#if !OPTIMIZE
-			var prog = Lex.LinkLexerParts(
-				false
-				, parts);
-			if (dump)
-			{
-				Console.Error.WriteLine("Disassembly of unoptimized lexer:");
-				Console.Error.WriteLine(Lex.Disassemble(prog));
-				Console.Error.WriteLine();
-			}
-#else
+			
 			var exprs = new List<KeyValuePair<int,object>>();
 			for(int ic=rules.Count,i = 0;i<ic;++i)
 			{
@@ -594,7 +564,7 @@ namespace Lexly
 				Console.Error.WriteLine(Lex.Disassemble(prog));
 				Console.Error.WriteLine();
 			}
-#endif
+
 			return prog;
 		}
 

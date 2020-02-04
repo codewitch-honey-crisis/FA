@@ -38,6 +38,9 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CharClsTableGen", "CharClsTableGen\CharClsTableGen.csproj", "{2A8E4869-FE68-4A30-BE9F-65CBB72B70B3}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LexDemo", "LexDemo\LexDemo.csproj", "{A8C52CD4-EE5E-4559-BA4C-3B9A77CEBF89}"
+	ProjectSection(ProjectDependencies) = postProject
+		{4B30D333-1DB5-4035-8996-E233AAA23C0D} = {4B30D333-1DB5-4035-8996-E233AAA23C0D}
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LexlyDemo", "LexlyDemo\LexlyDemo.csproj", "{06B39ACD-EB4E-480E-A153-14851E16F5D7}"
 	ProjectSection(ProjectDependencies) = postProject
