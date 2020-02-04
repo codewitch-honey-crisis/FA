@@ -183,19 +183,17 @@ namespace L
 				asts[i] = new KeyValuePair<int, object>(i, Ast.Parse(LexContext.Create(expressions[i])));
 			return Compiler.EmitLexer( optimize,asts);
 		}
+		/// <summary>
+		/// Takes a series of symbol ids paired with parts (which can be a string literal, an Ast expression, or an int[][] program fragment) and creates a lexer from them
+		/// </summary>
+		/// <param name="optimize"></param>
+		/// <param name="parts"></param>
+		/// <returns></returns>
 		public static int[][] CompileLexer(bool optimize,params KeyValuePair<int,object>[] parts)
 		{
 			return Compiler.EmitLexer(optimize, parts);
 		}
-		/// <summary>
-		/// Links a series of partial programs together into single lexer program
-		/// </summary>
-		/// <param name="parts">The parts</param>
-		/// <returns>A program</returns>
-		public static int[][] LinkLexerParts(bool optimize,IEnumerable<KeyValuePair<int,int[][]>> parts)
-		{
-			return Compiler.EmitLexer(parts);
-		}
+
 		/// <summary>
 		/// Disassembles the specified program
 		/// </summary>
