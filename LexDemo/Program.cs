@@ -3,7 +3,9 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Text;
 using CU;
+using F;
 using L;
 using LC;
 namespace LexDemo
@@ -37,6 +39,16 @@ namespace LexDemo
 			Console.WriteLine("DFA dump:");
 			Console.WriteLine(Lex.Disassemble(progDfa));
 			Console.WriteLine();
+
+			var nfa = FA.ToLexer(new FA[] 
+			{
+				FA.Parse(@"[A-Z_a-z][A-Z_a-z0-9]*",0),
+				FA.Parse(@"0|(\-?[1-9][0-9]*)",1),
+				FA.Parse(@"( |\t|\r|\n|\v|\f)",2)
+			});
+			var dfa = nfa.ToDfa();
+			dfa.TrimDuplicates();
+			var dfaTable = dfa.ToDfaStateTable();
 
 			var result = -1;
 			var count = 0f ;
@@ -99,6 +111,12 @@ namespace LexDemo
 				Console.Write("DFA: ");
 				_Perf(progDfa, test);
 				Console.WriteLine();
+				Console.Write("NFA (raw): ");
+				_Perf(nfa, test);
+				Console.WriteLine();
+				Console.Write("DFA (raw): ");
+				_Perf(dfaTable, test);
+				Console.WriteLine();
 				Console.WriteLine();
 			}
 			Console.WriteLine();
@@ -141,8 +159,84 @@ namespace LexDemo
 			ConsoleUtility.EraseProgressBar();
 			Console.WriteLine("Lexed in " + elapsed.TotalMilliseconds / (float)ITER + " msec");
 		}
+		static void _Perf(DfaEntry[] dfaTable, string test)
+		{
+			var t = F.UnicodeUtility.ToUtf32(test);
+			var sw = DateTimeUtility.HasPrecisionTime ? null : new Stopwatch();
+			DateTime utcStart;
+			DateTime utcEnd;
+			TimeSpan elapsed = TimeSpan.Zero;
+			const int ITER = 100;
+			ConsoleUtility.WriteProgressBar(0, false);
+			for (var i = 0; i < ITER; ++i)
+			{
+				if (0 == ((i + 1) % 10))
+					ConsoleUtility.WriteProgressBar(i, true);
+				var sb = new StringBuilder();
+				var more = true;
+				var e = t.GetEnumerator();
+				while (more)
+				{
+					sb.Clear();
+					if (!DateTimeUtility.HasPrecisionTime)
+					{
+						sw.Start();
+						FA.Lex(dfaTable,e,sb, out more);
+						sw.Stop();
+						elapsed += sw.Elapsed;
+					}
+					else
+					{
+						utcStart = DateTimeUtility.UtcNow;
+						FA.Lex(dfaTable, e, sb, out more);
+						utcEnd = DateTimeUtility.UtcNow;
+						elapsed += (utcEnd - utcStart);
+					}
+				}
+			}
+			ConsoleUtility.EraseProgressBar();
+			Console.WriteLine("Lexed in " + elapsed.TotalMilliseconds / (float)ITER + " msec");
+		}
+		static void _Perf(FA nfa, string test)
+		{
+			var t = F.UnicodeUtility.ToUtf32(test);
+			var sw = DateTimeUtility.HasPrecisionTime ? null : new Stopwatch();
+			DateTime utcStart;
+			DateTime utcEnd;
+			TimeSpan elapsed = TimeSpan.Zero;
+			const int ITER = 100;
+			ConsoleUtility.WriteProgressBar(0, false);
+			for (var i = 0; i < ITER; ++i)
+			{
+				if (0 == ((i + 1) % 10))
+					ConsoleUtility.WriteProgressBar(i, true);
+				var sb = new StringBuilder();
+				var more = true;
+				var e = t.GetEnumerator();
+				while (more)
+				{
+					sb.Clear();
+					if (!DateTimeUtility.HasPrecisionTime)
+					{
+						sw.Start();
+						nfa.Lex(e, sb, out more);
+						sw.Stop();
+						elapsed += sw.Elapsed;
+					}
+					else
+					{
+						utcStart = DateTimeUtility.UtcNow;
+						nfa.Lex(e, sb, out more);
+						utcEnd = DateTimeUtility.UtcNow;
+						elapsed += (utcEnd - utcStart);
+					}
+				}
+			}
+			ConsoleUtility.EraseProgressBar();
+			Console.WriteLine("Lexed in " + elapsed.TotalMilliseconds / (float)ITER + " msec");
+		}
 
-		
+
 		static void _RunLexer(int[][] prog)
 		{
 

@@ -51,6 +51,10 @@
     <None Include="dump.lasm" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\FA\FA.csproj">
+      <Project>{b6c72046-0d75-425f-b791-6ced5aaaca56}</Project>
+      <Name>FA</Name>
+    </ProjectReference>
     <ProjectReference Include="..\LexContext\LexContext.csproj">
       <Project>{240ac77d-3deb-4415-842b-8c0226d42593}</Project>
       <Name>LexContext</Name>

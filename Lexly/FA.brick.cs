@@ -1109,14 +1109,14 @@ builder.Append("\\v");return;case'\b':builder.Append("\\b");return;default:var s
 else{builder.Append("\\U");builder.Append(rangeChar.ToString("x8"));}}else builder.Append(s);break;}}static string _EscapeLabel(string label){if(string.IsNullOrEmpty(label))
 return label;string result=label.Replace("\\",@"\\");result=result.Replace("\"","\\\"");result=result.Replace("\n","\\n");result=result.Replace("\r","\\r");
 result=result.Replace("\0","\\0");result=result.Replace("\v","\\v");result=result.Replace("\t","\\t");result=result.Replace("\f","\\f");return result;
-}}}namespace F{partial class FA{public static int Lex(DfaEntry[]dfaTable,IEnumerator<int>input,StringBuilder capture){var state=0;while(input.MoveNext())
-{var next=FA.Move(dfaTable,state,input.Current);if(-1==next){return dfaTable[state].AcceptSymbolId;}capture.Append(char.ConvertFromUtf32(input.Current));
-state=next;}return dfaTable[state].AcceptSymbolId;}public int Lex(IEnumerator<int>input,StringBuilder capture){var states=FillEpsilonClosure();while(input.MoveNext())
-{var next=FA.FillMove(states,input.Current);if(0==next.Count){foreach(var state in states){if(state.IsAccepting)return state.AcceptSymbol;}return-1;}capture.Append(char.ConvertFromUtf32(input.Current));
-states=next;}foreach(var state in states){if(state.IsAccepting)return state.AcceptSymbol;}return-1;}}}namespace F{partial class FA{public static FA Parse(IEnumerable<char>
-input,int accept=-1,int line=1,int column=1,long position=0,string fileOrUrl=null){var lc=LexContext.Create(input);lc.EnsureStarted();lc.SetLocation(line,
-column,position,fileOrUrl);return Parse(lc,accept);}internal static FA Parse(LexContext pc,int accept=-1){FA result=null,next=null;int ich;pc.EnsureStarted();
-while(true){switch(pc.Current){case-1:
+}}}namespace F{partial class FA{public static int Lex(DfaEntry[]dfaTable,IEnumerator<int>input,StringBuilder capture,out bool more){var state=0;while(input.MoveNext())
+{more=true;var next=FA.Move(dfaTable,state,input.Current);if(-1==next){return dfaTable[state].AcceptSymbolId;}capture.Append(char.ConvertFromUtf32(input.Current));
+state=next;}more=false;return dfaTable[state].AcceptSymbolId;}public int Lex(IEnumerator<int>input,StringBuilder capture,out bool more){var states=FillEpsilonClosure();
+while(input.MoveNext()){more=true;var next=FA.FillMove(states,input.Current);if(0==next.Count){foreach(var state in states){if(state.IsAccepting){return
+ state.AcceptSymbol;}}return-1;}capture.Append(char.ConvertFromUtf32(input.Current));states=next;}more=false;foreach(var state in states){if(state.IsAccepting)
+return state.AcceptSymbol;}return-1;}}}namespace F{partial class FA{public static FA Parse(IEnumerable<char>input,int accept=-1,int line=1,int column=1,long
+ position=0,string fileOrUrl=null){var lc=LexContext.Create(input);lc.EnsureStarted();lc.SetLocation(line,column,position,fileOrUrl);return Parse(lc,accept);
+}internal static FA Parse(LexContext pc,int accept=-1){FA result=null,next=null;int ich;pc.EnsureStarted();while(true){switch(pc.Current){case-1:
 #if MINIMIZE
 result=result.ToDfa();result.TrimDuplicates();
 #endif
