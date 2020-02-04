@@ -266,19 +266,18 @@ j=_AppendRanges(sb,inst,j);++j;sb.Append(":");sb.Append(_FmtLbl(inst[j]));++j;}i
 else sb.Append("nset ");for(var i=1;i<inst.Length-1;i++){if(1!=i)sb.Append(", ");if(inst[i]==inst[i+1])sb.Append(_ToStr(inst[i]));else{sb.Append(_ToStr(inst[i]));
 sb.Append("..");sb.Append(_ToStr(inst[i+1]));}++i;}return sb.ToString();case Any:return"any";case Match:return"match "+inst[1].ToString();case Save:return
 "save "+inst[1].ToString();default:throw new InvalidProgramException("The instruction is not valid");}} internal static int[][]EmitLexer(bool optimize,
-params KeyValuePair<int,object>[]expressions){var fragments=new List<int[][]>(expressions.Length);var ordered=new List<object>(); var i=0;if(optimize)
-{var workingFA=new List<FA>();while(i<expressions.Length){while(i<expressions.Length){var ast=expressions[i].Value as Ast;if(null==ast){var str=expressions[i].Value
- as string;if(null!=str)ast=Ast.FromLiteral(str);}if(null!=ast){FA fa=null;try{fa=ast.ToFA(expressions[i].Key);} catch(NotSupportedException){}if(null
-==fa){if(0<workingFA.Count){ordered.Add(workingFA);workingFA=new List<FA>();}break;}workingFA.Add(fa);}else break;++i;}if(i==expressions.Length){if(0<
-workingFA.Count){ordered.Add(workingFA);workingFA=new List<FA>();}}while(i<expressions.Length){var ast=expressions[i].Value as Ast;if(null==ast){var str
-=expressions[i].Value as string;if(null!=str)ast=Ast.FromLiteral(str);}if(null!=ast){FA fa;try{fa=ast.ToFA(expressions[i].Key);workingFA.Add(fa);++i;if
-(i==expressions.Length)ordered.Add(workingFA);break;}catch{}}ordered.Add(expressions[i]);++i;}}i=0;for(int ic=ordered.Count;i<ic;++i){var l=ordered[i]
-as List<FA>;if(null!=l){var root=new FA();for(int jc=l.Count,j=0;j<jc;++j){root.EpsilonTransitions.Add(l[j]);}root=root.ToDfa();root.TrimDuplicates();
-ordered[i]=root;}}}else{for(i=0;i<expressions.Length;++i){ordered.Add(expressions[i]);}}i=0;for(var ic=ordered.Count;i<ic;++i){var l=new List<int[]>();
-var fa=ordered[i]as FA;if(null!=fa){EmitFAPart(fa,l);}else{if(ordered[i]is KeyValuePair<int,object>){var kvp=(KeyValuePair<int,object>)ordered[i];var ast
-=kvp.Value as Ast;if(null!=ast){EmitAstInnerPart(ast,l);var save=new int[]{Save,1};l.Add(save);var match=new int[2];match[0]=Match;match[1]=kvp.Key;l.Add(match);
-}else{var frag=kvp.Value as int[][];Fixup(frag,l.Count);l.AddRange(frag); var save=new int[]{Save,1};l.Add(save);var match=new int[2];match[0]=Match;match[1]
-=kvp.Key;l.Add(match);}}}fragments.Add(l.ToArray());}var result=_EmitLexer(fragments);if(optimize){result=new List<int[]>(RemoveDeadCode(result)).ToArray();
+params KeyValuePair<int,object>[]parts){var fragments=new List<int[][]>(parts.Length);var ordered=new List<object>(); var i=0;if(optimize){var workingFA
+=new List<FA>();while(i<parts.Length){while(i<parts.Length){var ast=parts[i].Value as Ast;if(null==ast){var str=parts[i].Value as string;if(null!=str)
+ast=Ast.FromLiteral(str);}if(null!=ast){FA fa=null;try{fa=ast.ToFA(parts[i].Key);} catch(NotSupportedException){}if(null==fa){if(0<workingFA.Count){ordered.Add(workingFA);
+workingFA=new List<FA>();}break;}workingFA.Add(fa);}else break;++i;}if(i==parts.Length){if(0<workingFA.Count){ordered.Add(workingFA);workingFA=new List<FA>();
+}}while(i<parts.Length){var ast=parts[i].Value as Ast;if(null==ast){var str=parts[i].Value as string;if(null!=str)ast=Ast.FromLiteral(str);}if(null!=ast)
+{FA fa;try{fa=ast.ToFA(parts[i].Key);workingFA.Add(fa);++i;if(i==parts.Length)ordered.Add(workingFA);break;}catch{}}ordered.Add(parts[i]);++i;}}i=0;for
+(int ic=ordered.Count;i<ic;++i){var l=ordered[i]as List<FA>;if(null!=l){var root=new FA();for(int jc=l.Count,j=0;j<jc;++j){root.EpsilonTransitions.Add(l[j]);
+}root=root.ToDfa();root.TrimDuplicates();ordered[i]=root;}}}else{for(i=0;i<parts.Length;++i){ordered.Add(parts[i]);}}i=0;for(var ic=ordered.Count;i<ic;++i)
+{var l=new List<int[]>();var fa=ordered[i]as FA;if(null!=fa){EmitFAPart(fa,l);}else{if(ordered[i]is KeyValuePair<int,object>){var kvp=(KeyValuePair<int,object>)ordered[i];
+var ast=kvp.Value as Ast;if(null!=ast){EmitAstInnerPart(ast,l);var save=new int[]{Save,1};l.Add(save);var match=new int[2];match[0]=Match;match[1]=kvp.Key;
+l.Add(match);}else{var frag=kvp.Value as int[][];Fixup(frag,l.Count);l.AddRange(frag); var save=new int[]{Save,1};l.Add(save);var match=new int[2];match[0]
+=Match;match[1]=kvp.Key;l.Add(match);}}}fragments.Add(l.ToArray());}var result=_EmitLexer(fragments);if(optimize){result=new List<int[]>(RemoveDeadCode(result)).ToArray();
 }return result;}internal static IList<int[]>RemoveDeadCode(IList<int[]>prog){var done=false;while(!done){done=true;var toRemove=-1;for(var i=0;i<prog.Count;++i)
 {var pc=prog[i]; if(Jmp==pc[0]&&i+1==pc[1]&&2==pc.Length){toRemove=i;break;}}if(-1!=toRemove){done=false;var newProg=new List<int[]>(prog.Count-1);for(var
  i=0;i<toRemove;++i){var inst=prog[i];switch(inst[0]){case Switch:var inDef=false;for(var j=0;j<inst.Length;j++){if(inDef){if(inst[j]>toRemove)--inst[j];
@@ -377,13 +376,13 @@ public static int[][]CompileLiteralPart(string expression){var prog=new List<int
 /// <param name="optimize">True to generate optimized code, false to use the standard generator</param>
 /// <returns>A program</returns>
 public static int[][]CompileLexerRegex(bool optimize,params string[]expressions){var asts=new KeyValuePair<int,object>[expressions.Length];for(var i=0;i<expressions.Length;++i)
-asts[i]=new KeyValuePair<int,object>(i,Ast.Parse(LexContext.Create(expressions[i])));return Compiler.EmitLexer(optimize,asts);}public static int[][]CompileLexer(bool
- optimize,params KeyValuePair<int,object>[]parts){return Compiler.EmitLexer(optimize,parts);}/// <summary>
-/// Links a series of partial programs together into single lexer program
+asts[i]=new KeyValuePair<int,object>(i,Ast.Parse(LexContext.Create(expressions[i])));return Compiler.EmitLexer(optimize,asts);}/// <summary>
+/// Takes a series of symbol ids paired with parts (which can be a string literal, an Ast expression, or an int[][] program fragment) and creates a lexer from them
 /// </summary>
-/// <param name="parts">The parts</param>
-/// <returns>A program</returns>
-public static int[][]LinkLexerParts(bool optimize,IEnumerable<KeyValuePair<int,int[][]>>parts){return Compiler.EmitLexer(parts);}/// <summary>
+/// <param name="optimize">True to optimize, otherwise false</param>
+/// <param name="parts">The parts to merge</param>
+/// <returns>A new lexer composed of the specified parts</returns>
+public static int[][]CompileLexer(bool optimize,params KeyValuePair<int,object>[]parts){return Compiler.EmitLexer(optimize,parts);}/// <summary>
 /// Disassembles the specified program
 /// </summary>
 /// <param name="program">The program</param>

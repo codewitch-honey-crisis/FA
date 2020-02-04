@@ -254,6 +254,7 @@ namespace L
 				{
 					if (-1 == input.Advance())
 						throw new ExpectingException("Expecting low surrogate in unicode stream. The input source is corrupt or not valid Unicode", input.Line, input.Column, input.Position, input.FileOrUrl);
+					++sp;
 					var ch2 = unchecked((char)input.Current);
 					cur = char.ConvertToUtf32(ch1, ch2);
 				}
@@ -433,7 +434,7 @@ namespace L
 			if (currentFiberCount > maxFiberCount)
 				maxFiberCount = currentFiberCount;
 			matched = null;
-			var cur = -1;
+			int cur;
 			if (LexContext.EndOfInput != input.Current)
 			{
 				var ch1 = unchecked((char)input.Current);
@@ -441,6 +442,7 @@ namespace L
 				{
 					if (-1 == input.Advance())
 						throw new ExpectingException("Expecting low surrogate in unicode stream. The input source is corrupt or not valid Unicode", input.Line, input.Column, input.Position, input.FileOrUrl);
+					++sp;
 					var ch2 = unchecked((char)input.Current);
 					cur = char.ConvertToUtf32(ch1, ch2);
 				}
