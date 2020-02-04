@@ -491,6 +491,14 @@ namespace Rolex
 					if (ic)
 						fa = FA.CaseInsensitive(fa, rule.Id);
 				}
+#if DEBUG
+				var fas = fa.FirstAcceptingState;
+				if (null != fas)
+				{
+					System.Diagnostics.Debug.Assert(-1 < fas.AcceptSymbol, "Illegal accept symbol " + fas.AcceptSymbol.ToString() + " was found on expression " + i.ToString());
+				}
+#endif
+
 				result.EpsilonTransitions.Add(fa);
 			}
 			result.TrimNeutrals();

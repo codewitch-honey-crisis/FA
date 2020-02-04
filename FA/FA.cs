@@ -89,6 +89,8 @@ namespace F
 					var fa = closure[j];
 					if (fa.IsAccepting && !symbolLookup.ContainsKey(fa.AcceptSymbol))
 					{
+						if (0 > fa.AcceptSymbol)
+							throw new InvalidOperationException("An accept symbol was never specified for state q" + jc.ToString());
 						symbolLookup.Add(fa.AcceptSymbol, i);
 						++i;
 					}
@@ -96,13 +98,19 @@ namespace F
 			}
 			else // build the symbol lookup from the symbol table
 				for (int ic = symbolTable.Count, i = 0; i < ic; ++i)
+				{
 					symbolLookup.Add(symbolTable[i], i);
+				}
 
 			// build the root array
 			var result = new DfaEntry[closure.Count];
 			for (var i = 0; i < result.Length; i++)
 			{
 				var fa = closure[i];
+#if DEBUG
+				if (fa.IsAccepting)
+					System.Diagnostics.Debug.Assert(-1 < fa.AcceptSymbol, "Illegal accept symbol " + fa.AcceptSymbol.ToString() + " was found on state state q" + i.ToString());
+#endif
 				// get all the transition ranges for each destination state
 				var trgs = fa.FillInputTransitionRangesGroupedByState();
 				// make a new transition entry array for our DFA state table
@@ -119,7 +127,22 @@ namespace F
 
 					++j;
 				}
+
 				// now add the state entry for the state above
+#if DEBUG
+				if (fa.IsAccepting && !symbolLookup.ContainsKey(fa.AcceptSymbol))
+				{
+					try
+					{
+						dfa.RenderToFile(@"dfastatetable_crashdump_dfa.jpg");
+					}
+					catch
+					{
+
+					}
+					System.Diagnostics.Debug.Assert(false, "The symbol table did not contain an entry for state q" + i.ToString());
+				}
+#endif
 				result[i] = new DfaEntry(
 					fa.IsAccepting ? symbolLookup[fa.AcceptSymbol] : -1,
 					trns);

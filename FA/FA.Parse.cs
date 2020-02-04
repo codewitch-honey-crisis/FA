@@ -1,4 +1,5 @@
-﻿using LC;
+﻿#define MINIMIZE
+using LC;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -16,6 +17,7 @@ namespace F
 		}
 		internal static FA Parse(LexContext pc,int accept = -1)
 		{
+			
 			FA result = null, next = null;
 			int ich;
 			pc.EnsureStarted();
@@ -24,6 +26,10 @@ namespace F
 				switch (pc.Current)
 				{
 					case -1:
+#if MINIMIZE
+						result = result.ToDfa();
+						result.TrimDuplicates();
+#endif
 						return result;
 					case '.':
 						var dot = FA.Set(new int[] { 0, 0x10ffff },accept);
@@ -204,11 +210,15 @@ namespace F
 							result = next;
 						break;
 					case ')':
+#if MINIMIZE
+						result = result.ToDfa();
+						result.TrimDuplicates();
+#endif
 						return result;
 					case '(':
 						pc.Advance();
 						pc.Expecting();
-						next = Parse(pc);
+						next = Parse(pc,accept);
 						pc.Expecting(')');
 						pc.Advance();
 						next = _ParseModifier(next, pc,accept);
@@ -222,7 +232,7 @@ namespace F
 					case '|':
 						if (-1 != pc.Advance())
 						{
-							next = Parse(pc);
+							next = Parse(pc,accept);
 							result = FA.Or(new FA[] { result, next }, accept);
 						}
 						else

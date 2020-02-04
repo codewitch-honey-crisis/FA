@@ -277,27 +277,30 @@ workingFA=new List<FA>();}break;}workingFA.Add(fa);}else break;++i;}if(i==parts.
 {var l=new List<int[]>();var fa=ordered[i]as FA;if(null!=fa){EmitFAPart(fa,l);}else{if(ordered[i]is KeyValuePair<int,object>){var kvp=(KeyValuePair<int,object>)ordered[i];
 var ast=kvp.Value as Ast;if(null!=ast){EmitAstInnerPart(ast,l);var save=new int[]{Save,1};l.Add(save);var match=new int[2];match[0]=Match;match[1]=kvp.Key;
 l.Add(match);}else{var frag=kvp.Value as int[][];Fixup(frag,l.Count);l.AddRange(frag); var save=new int[]{Save,1};l.Add(save);var match=new int[2];match[0]
-=Match;match[1]=kvp.Key;l.Add(match);}}}fragments.Add(l.ToArray());}var result=_EmitLexer(fragments);if(optimize){result=new List<int[]>(RemoveDeadCode(result)).ToArray();
-}return result;}internal static IList<int[]>RemoveDeadCode(IList<int[]>prog){var done=false;while(!done){done=true;var toRemove=-1;for(var i=0;i<prog.Count;++i)
-{var pc=prog[i]; if(Jmp==pc[0]&&i+1==pc[1]&&2==pc.Length){toRemove=i;break;}}if(-1!=toRemove){done=false;var newProg=new List<int[]>(prog.Count-1);for(var
- i=0;i<toRemove;++i){var inst=prog[i];switch(inst[0]){case Switch:var inDef=false;for(var j=0;j<inst.Length;j++){if(inDef){if(inst[j]>toRemove)--inst[j];
-}else{if(-1==inst[j]){++j;if(inst[j]>toRemove)--inst[j];}else if(-2==inst[j])inDef=true;}}break;case Jmp:for(var j=1;j<inst.Length;j++)if(inst[j]>toRemove)
---inst[j];break;}newProg.Add(prog[i]);}var progNext=new List<int[]>(prog.Count-toRemove-1);for(var i=toRemove+1;i<prog.Count;i++){progNext.Add(prog[i]);
-}var pna=progNext.ToArray();Fixup(pna,-1);newProg.AddRange(pna);prog=newProg.ToArray();}}return prog;}internal static int[][]EmitLexer(IEnumerable<KeyValuePair<int,int[][]>>
-parts){var l=new List<KeyValuePair<int,int[][]>>(parts);var prog=new List<int[]>();int[]match,save; save=new int[2];save[0]=Save;save[1]=0;prog.Add(save);
- var jmp=new int[l.Count+2];jmp[0]=Compiler.Jmp;prog.Add(jmp); for(int ic=l.Count,i=0;i<ic;++i){jmp[i+1]=prog.Count; Fixup(l[i].Value,prog.Count);prog.AddRange(l[i].Value);
- save=new int[2];save[0]=Save;save[1]=1;prog.Add(save); match=new int[2];match[0]=Match;match[1]=l[i].Key;prog.Add(match);} jmp[jmp.Length-1]=prog.Count;
- var any=new int[1];any[0]=Any;prog.Add(any); save=new int[2];save[0]=Save;save[1]=1;prog.Add(save); match=new int[2];match[0]=Match;match[1]=-1;prog.Add(match);
-return prog.ToArray();}internal static int[][]_EmitLexer(IEnumerable<int[][]>frags){var l=new List<int[][]>(frags);var prog=new List<int[]>();int[]match,
-save; save=new int[2];save[0]=Save;save[1]=0;prog.Add(save); var jmp=new int[l.Count+2];jmp[0]=Compiler.Jmp;prog.Add(jmp); for(int ic=l.Count,i=0;i<ic;
-++i){jmp[i+1]=prog.Count; Fixup(l[i],prog.Count);prog.AddRange(l[i]);} jmp[jmp.Length-1]=prog.Count; var any=new int[1];any[0]=Any;prog.Add(any); save
-=new int[2];save[0]=Save;save[1]=1;prog.Add(save); match=new int[2];match[0]=Match;match[1]=-1;prog.Add(match);return prog.ToArray();}internal static void
- SortRanges(int[]ranges){var result=new List<KeyValuePair<int,int>>(ranges.Length/2);for(var i=0;i<ranges.Length-1;++i){var ch=ranges[i];++i;result.Add(new
- KeyValuePair<int,int>(ch,ranges[i]));}result.Sort((x,y)=>{return x.Key.CompareTo(y.Key);});for(int ic=result.Count,i=0;i<ic;++i){var j=i*2;var kvp=result[i];
-ranges[j]=kvp.Key;ranges[j+1]=kvp.Value;}}static int[]_GetFirsts(int[][]part,int index){if(part.Length<=index)return new int[0];int idx;List<int>resl;
-int[]result;var pc=part[index];switch(pc[0]){case Char:return new int[]{pc[1],pc[1]};case Set:result=new int[pc.Length-1];Array.Copy(pc,1,result,0,result.Length);
-return result;case NSet:result=new int[pc.Length-1];Array.Copy(pc,1,result,0,result.Length);return RangeUtility.FromPairs(new List<KeyValuePair<int,int>>(RangeUtility.NotRanges(RangeUtility.ToPairs(result))));
-case Any:return new int[]{0,0x10ffff};case UCode:result=CharacterClasses.UnicodeCategories[pc[1]];return result;case NUCode:result=CharacterClasses.UnicodeCategories[pc[1]];
+=Match;match[1]=kvp.Key;l.Add(match);}}}fragments.Add(l.ToArray());}var result=_EmitLexer(fragments);if(optimize){ var code=new List<int[]>(RemoveDeadCode(result));
+var pc=code[1]; if(3==pc.Length&&Jmp==pc[0]){if(2==pc[1]&&result.Length-3==pc[2]&&Switch==code[2][0]){pc=code[2];var idef=Array.IndexOf(pc,-2);if(0>idef)
+{var nsw=new int[pc.Length+2];Array.Copy(pc,0,nsw,0,pc.Length);nsw[nsw.Length-2]=-2;nsw[nsw.Length-1]=result.Length-3;code[2]=nsw;code.RemoveAt(1);result
+=code.ToArray();Fixup(result,-1);}}}}return result;}internal static IList<int[]>RemoveDeadCode(IList<int[]>prog){var done=false;while(!done){done=true;
+var toRemove=-1;for(var i=0;i<prog.Count;++i){var pc=prog[i]; if(Jmp==pc[0]&&i+1==pc[1]&&2==pc.Length){toRemove=i;break;}}if(-1!=toRemove){done=false;
+var newProg=new List<int[]>(prog.Count-1);for(var i=0;i<toRemove;++i){var inst=prog[i];switch(inst[0]){case Switch:var inDef=false;for(var j=0;j<inst.Length;
+j++){if(inDef){if(inst[j]>toRemove)--inst[j];}else{if(-1==inst[j]){++j;if(inst[j]>toRemove)--inst[j];}else if(-2==inst[j])inDef=true;}}break;case Jmp:
+for(var j=1;j<inst.Length;j++)if(inst[j]>toRemove)--inst[j];break;}newProg.Add(prog[i]);}var progNext=new List<int[]>(prog.Count-toRemove-1);for(var i
+=toRemove+1;i<prog.Count;i++){progNext.Add(prog[i]);}var pna=progNext.ToArray();Fixup(pna,-1);newProg.AddRange(pna);prog=newProg.ToArray();}}return prog;
+}internal static int[][]EmitLexer(IEnumerable<KeyValuePair<int,int[][]>>parts){var l=new List<KeyValuePair<int,int[][]>>(parts);var prog=new List<int[]>();
+int[]match,save; save=new int[2];save[0]=Save;save[1]=0;prog.Add(save); var jmp=new int[l.Count+2];jmp[0]=Compiler.Jmp;prog.Add(jmp); for(int ic=l.Count,i
+=0;i<ic;++i){jmp[i+1]=prog.Count; Fixup(l[i].Value,prog.Count);prog.AddRange(l[i].Value); save=new int[2];save[0]=Save;save[1]=1;prog.Add(save); match
+=new int[2];match[0]=Match;match[1]=l[i].Key;prog.Add(match);} jmp[jmp.Length-1]=prog.Count; var any=new int[1];any[0]=Any;prog.Add(any); save=new int[2];
+save[0]=Save;save[1]=1;prog.Add(save); match=new int[2];match[0]=Match;match[1]=-1;prog.Add(match);return prog.ToArray();}internal static int[][]_EmitLexer(IEnumerable<int[][]>
+frags){var l=new List<int[][]>(frags);var prog=new List<int[]>();int[]match,save; save=new int[2];save[0]=Save;save[1]=0;prog.Add(save); var jmp=new int[l.Count
++2];jmp[0]=Compiler.Jmp;prog.Add(jmp); for(int ic=l.Count,i=0;i<ic;++i){jmp[i+1]=prog.Count; Fixup(l[i],prog.Count);prog.AddRange(l[i]);} jmp[jmp.Length
+-1]=prog.Count; var any=new int[1];any[0]=Any;prog.Add(any); save=new int[2];save[0]=Save;save[1]=1;prog.Add(save); match=new int[2];match[0]=Match;match[1]
+=-1;prog.Add(match);return prog.ToArray();}internal static void SortRanges(int[]ranges){var result=new List<KeyValuePair<int,int>>(ranges.Length/2);for
+(var i=0;i<ranges.Length-1;++i){var ch=ranges[i];++i;result.Add(new KeyValuePair<int,int>(ch,ranges[i]));}result.Sort((x,y)=>{return x.Key.CompareTo(y.Key);
+});for(int ic=result.Count,i=0;i<ic;++i){var j=i*2;var kvp=result[i];ranges[j]=kvp.Key;ranges[j+1]=kvp.Value;}}static int[]_GetFirsts(int[][]part,int index)
+{if(part.Length<=index)return new int[0];int idx;List<int>resl;int[]result;var pc=part[index];switch(pc[0]){case Char:return new int[]{pc[1],pc[1]};case
+ Set:result=new int[pc.Length-1];Array.Copy(pc,1,result,0,result.Length);return result;case NSet:result=new int[pc.Length-1];Array.Copy(pc,1,result,0,
+result.Length);return RangeUtility.FromPairs(new List<KeyValuePair<int,int>>(RangeUtility.NotRanges(RangeUtility.ToPairs(result))));case Any:return new
+ int[]{0,0x10ffff};case UCode:result=CharacterClasses.UnicodeCategories[pc[1]];return result;case NUCode:result=CharacterClasses.UnicodeCategories[pc[1]];
 Array.Copy(pc,1,result,0,result.Length);return RangeUtility.FromPairs(new List<KeyValuePair<int,int>>(RangeUtility.NotRanges(RangeUtility.ToPairs(result))));
 case Switch:resl=new List<int>();idx=1;while(pc.Length>idx&&-2!=pc[idx]){if(-1==pc[idx]){idx+=2;continue;}resl.Add(pc[idx]);}if(pc.Length>idx&&-2==pc[idx])
 {++idx;while(pc.Length>idx){resl.AddRange(_GetFirsts(part,pc[idx]));++idx;}}return resl.ToArray();case Jmp:resl=new List<int>();idx=1;while(pc.Length>
@@ -311,13 +314,13 @@ inst[j])inDef=true;}}break;case Jmp:for(var j=1;j<inst.Length;j++)inst[j]+=offse
 public
 #endif
 static class Lex{public static void RenderOptimizedExecutionGraph(string expression,string filename){RenderOptimizedExecutionGraph(LexContext.Create(expression),
-filename);}public static void RenderOptimizedExecutionGraph(LexContext expression,string filename){var ast=Ast.Parse(expression);var fa=ast.ToFA(0);fa.TrimNeutrals();
-fa.RenderToFile(filename);}public static int[][]FinalizePart(int[][]part,int match=0){var result=new List<int[]>(part.Length+3);var inst=new int[2];inst[0]
-=Compiler.Save;inst[1]=0;result.Add(inst);Compiler.Fixup(part,result.Count);result.AddRange(part);inst=new int[2];inst[0]=Compiler.Save;inst[1]=1;result.Add(inst);
-inst=new int[2];inst[0]=Compiler.Match;inst[1]=match;result.Add(inst);return result.ToArray();}public static int[]GetCharacterClass(string name){if(null
-==name)throw new ArgumentNullException(nameof(name));if(0==name.Length)throw new ArgumentException("The character class name must not be empty.",nameof(name));
-int[]result;if(!CharacterClasses.Known.TryGetValue(name,out result))throw new ArgumentException("The character class "+name+" was not found",nameof(name));
-return result;}/// <summary>
+filename);}public static void RenderOptimizedExecutionGraph(LexContext expression,string filename){var ast=Ast.Parse(expression);var fa=ast.ToFA(0);fa.ToDfa();
+fa.TrimDuplicates();fa.RenderToFile(filename);}public static int[][]FinalizePart(int[][]part,int match=0){var result=new List<int[]>(part.Length+3);var
+ inst=new int[2];inst[0]=Compiler.Save;inst[1]=0;result.Add(inst);Compiler.Fixup(part,result.Count);result.AddRange(part);inst=new int[2];inst[0]=Compiler.Save;
+inst[1]=1;result.Add(inst);inst=new int[2];inst[0]=Compiler.Match;inst[1]=match;result.Add(inst);return result.ToArray();}public static int[]GetCharacterClass(string
+ name){if(null==name)throw new ArgumentNullException(nameof(name));if(0==name.Length)throw new ArgumentException("The character class name must not be empty.",
+nameof(name));int[]result;if(!CharacterClasses.Known.TryGetValue(name,out result))throw new ArgumentException("The character class "+name+" was not found",
+nameof(name));return result;}/// <summary>
 /// Assembles the assembly code into a program
 /// </summary>
 /// <param name="asmCode">The code to assemble</param>
@@ -409,7 +412,7 @@ public static int Run(int[][]prog,LexContext input){input.EnsureStarted();int i,
 nextFiberCount=0;int[]pc; int sp=0; var sb=new StringBuilder(64);int[]saved,matched;saved=new int[2];currentFibers=new _Fiber[prog.Length];nextFibers=
 new _Fiber[prog.Length];_EnqueueFiber(ref currentFiberCount,ref currentFibers,new _Fiber(prog,0,saved),0);matched=null;var cur=-1;if(LexContext.EndOfInput
 !=input.Current){var ch1=unchecked((char)input.Current);if(char.IsHighSurrogate(ch1)){if(-1==input.Advance())throw new ExpectingException("Expecting low surrogate in unicode stream. The input source is corrupt or not valid Unicode",
-input.Line,input.Column,input.Position,input.FileOrUrl);var ch2=unchecked((char)input.Current);cur=char.ConvertToUtf32(ch1,ch2);}else cur=ch1;}while(0<currentFiberCount)
+input.Line,input.Column,input.Position,input.FileOrUrl);++sp;var ch2=unchecked((char)input.Current);cur=char.ConvertToUtf32(ch1,ch2);}else cur=ch1;}while(0<currentFiberCount)
 {bool passed=false;for(i=0;i<currentFiberCount;++i){var t=currentFibers[i];pc=t.Program[t.Index];saved=t.Saved;switch(pc[0]){case Compiler.Switch:var idx
 =1;while(idx<pc.Length&&-2<pc[idx]){if(_InRanges(pc,ref idx,cur)){while(-1!=pc[idx])++idx;++idx;passed=true;_EnqueueFiber(ref nextFiberCount,ref nextFibers,
 new _Fiber(t,pc[idx],saved),sp+1);idx=pc.Length;break;}else{while(-1!=pc[idx])++idx;++idx;}++idx;}if(idx<pc.Length&&-2==pc[idx]){++idx;while(idx<pc.Length)
@@ -432,55 +435,56 @@ input.Line,input.Column,input.Position,input.FileOrUrl);++sp;var ch2=unchecked((
 public static LexStatistics RunWithLoggingAndStatistics(int[][]prog,LexContext input,TextWriter log,out int result){ input.EnsureStarted();int i,match
 =-1;int passes=0;int maxFiberCount=0;_Fiber[]currentFibers,nextFibers,tmp;int currentFiberCount=0,nextFiberCount=0;int[]pc; int sp=0; var sb=new StringBuilder(64);
 int[]saved,matched;saved=new int[2];currentFibers=new _Fiber[prog.Length];nextFibers=new _Fiber[prog.Length];_EnqueueFiber(ref currentFiberCount,ref currentFibers,
-new _Fiber(prog,0,saved),0);if(currentFiberCount>maxFiberCount)maxFiberCount=currentFiberCount;matched=null;var cur=-1;if(LexContext.EndOfInput!=input.Current)
+new _Fiber(prog,0,saved),0);if(currentFiberCount>maxFiberCount)maxFiberCount=currentFiberCount;matched=null;int cur;if(LexContext.EndOfInput!=input.Current)
 {var ch1=unchecked((char)input.Current);if(char.IsHighSurrogate(ch1)){if(-1==input.Advance())throw new ExpectingException("Expecting low surrogate in unicode stream. The input source is corrupt or not valid Unicode",
-input.Line,input.Column,input.Position,input.FileOrUrl);var ch2=unchecked((char)input.Current);cur=char.ConvertToUtf32(ch1,ch2);}else cur=ch1;}else cur
-=-1;while(0<currentFiberCount){bool passed=false;for(i=0;i<currentFiberCount;++i){var lpassed=false;var shouldLog=false;var t=currentFibers[i];pc=t.Program[t.Index];
-saved=t.Saved;switch(pc[0]){case Compiler.Switch:var idx=1;shouldLog=true;while(idx<pc.Length&&-2<pc[idx]){if(_InRanges(pc,ref idx,cur)){while(-1!=pc[idx])
-++idx;++idx;lpassed=true;passed=true;_EnqueueFiber(ref nextFiberCount,ref nextFibers,new _Fiber(t,pc[idx],saved),sp+1);idx=pc.Length;break;}else{while
-(-1!=pc[idx])++idx;++idx;}++idx;}if(idx<pc.Length&&-2==pc[idx]){++idx;while(pc.Length>idx){_EnqueueFiber(ref nextFiberCount,ref nextFibers,new _Fiber(t,
-pc[idx],saved),sp);if(currentFiberCount>maxFiberCount)maxFiberCount=currentFiberCount;++idx;}}break;case Compiler.Char:shouldLog=true;if(cur==pc[1]){goto
- case Compiler.Any;}break;case Compiler.Set:shouldLog=true;idx=1;if(_InRanges(pc,ref idx,cur)){goto case Compiler.Any;}break;case Compiler.NSet:shouldLog
-=true;idx=1;if(!_InRanges(pc,ref idx,cur)){goto case Compiler.Any;}break;case Compiler.UCode:shouldLog=true;var str=char.ConvertFromUtf32(cur);if(unchecked((int)char.GetUnicodeCategory(str,
-0)==pc[1])){goto case Compiler.Any;}break;case Compiler.NUCode:shouldLog=true;str=char.ConvertFromUtf32(cur);if(unchecked((int)char.GetUnicodeCategory(str,
-0))!=pc[1]){goto case Compiler.Any;}break;case Compiler.Any:shouldLog=true;if(LexContext.EndOfInput!=input.Current){passed=true;lpassed=true;_EnqueueFiber(ref
- nextFiberCount,ref nextFibers,new _Fiber(t,t.Index+1,saved),sp+1);}break;case Compiler.Match:matched=saved;match=pc[1]; i=currentFiberCount;break;}if
-(shouldLog){++passes;_LogInstruction(input,pc,cur,sp,lpassed,log);}}if(passed){sb.Append(char.ConvertFromUtf32(cur));input.Advance();if(LexContext.EndOfInput
-!=input.Current){var ch1=unchecked((char)input.Current);if(char.IsHighSurrogate(ch1)){input.Advance();if(-1==input.Advance())throw new ExpectingException("Expecting low surrogate in unicode stream. The input source is corrupt or not valid Unicode",
 input.Line,input.Column,input.Position,input.FileOrUrl);++sp;var ch2=unchecked((char)input.Current);cur=char.ConvertToUtf32(ch1,ch2);}else cur=ch1;}else
- cur=-1;++sp;}tmp=currentFibers;currentFibers=nextFibers;nextFibers=tmp;currentFiberCount=nextFiberCount;nextFiberCount=0;}if(null!=matched){var start
-=matched[0]; var len=matched[1];input.CaptureBuffer.Append(sb.ToString(start,len-start));result=match;return new LexStatistics(maxFiberCount,passes/(sp+1f));
-}result=-1; return new LexStatistics(maxFiberCount,passes/(sp+1f));}static void _LogInstruction(LexContext input,int[]pc,int cur,int sp,bool passed,TextWriter
- log){log.WriteLine("["+sp+"] "+(cur!=-1?char.ConvertFromUtf32(cur):"<EOI>")+": "+Compiler.ToString(pc)+" "+(passed?"passed":(pc[0]==Compiler.Switch&&
--1<Array.IndexOf(pc,-2)?"defaulted":"failed")));}static bool _InRanges(int[]pc,ref int index,int ch){var found=false; for(var j=index;j<pc.Length;++j)
-{if(0>pc[j]){index=j;return false;} var first=pc[j];++j;var last=pc[j]; if(ch<=last){if(first<=ch)found=true;index=j;return found;}}index=pc.Length;return
- found;}static void _EnqueueFiber(ref int lcount,ref _Fiber[]l,_Fiber t,int sp){ if(l.Length<=lcount){var newarr=new _Fiber[l.Length*2];Array.Copy(l,0,
-newarr,0,l.Length);l=newarr;}l[lcount]=t;++lcount;var pc=t.Program[t.Index];switch(pc[0]){case Compiler.Jmp:for(var j=1;j<pc.Length;j++)_EnqueueFiber(ref
- lcount,ref l,new _Fiber(t.Program,pc[j],t.Saved),sp);break;case Compiler.Save:var slot=pc[1];var max=slot>t.Saved.Length?slot:t.Saved.Length;var saved
-=new int[max];for(var i=0;i<t.Saved.Length;++i)saved[i]=t.Saved[i];saved[slot]=sp;_EnqueueFiber(ref lcount,ref l,new _Fiber(t,t.Index+1,saved),sp);break;
-}}private struct _Fiber{public readonly int[][]Program;public readonly int Index;public int[]Saved;public _Fiber(int[][]program,int index,int[]saved){
-Program=program;Index=index;Saved=saved;}public _Fiber(_Fiber fiber,int index,int[]saved){Program=fiber.Program;Index=index;Saved=saved;}public override
- string ToString(){return Disassemble(new int[][]{Program[Index]}).Substring(7);}}}}namespace L{public struct LexStatistics{public readonly int MaxFiberCount;
-public readonly float AverageCharacterPasses;public LexStatistics(int maxFiberCount,float averageCharacterPasses){MaxFiberCount=maxFiberCount;AverageCharacterPasses
-=averageCharacterPasses;}}}namespace L{static class RangeUtility{public static int[]Merge(int[]x,int[]y){var pairs=new List<KeyValuePair<int,int>>((x.Length
-+y.Length)/2);pairs.AddRange(ToPairs(x));pairs.AddRange(ToPairs(y));NormalizeRangeList(pairs);return FromPairs(pairs);}public static bool Intersects(int[]
-x,int[]y){if(null==x||null==y)return false;if(x==y)return true;for(var i=0;i<x.Length;i+=2){for(var j=0;j<y.Length;j+=2){if(Intersects(x[i],x[i+1],y[j],
-y[j+1]))return true;if(x[i]>y[j+1])return false;}}return false;}public static bool Intersects(int xf,int xl,int yf,int yl){return(xf>=yf&&xf<=yl)||(xl
->=yf&&xl<=yl);}public static KeyValuePair<int,int>[]ToPairs(int[]packedRanges){var result=new KeyValuePair<int,int>[packedRanges.Length/2];for(var i=0;i<result.Length;++i)
-{var j=i*2;result[i]=new KeyValuePair<int,int>(packedRanges[j],packedRanges[j+1]);}return result;}public static int[]FromPairs(IList<KeyValuePair<int,int>>
-pairs){var result=new int[pairs.Count*2];for(int ic=pairs.Count,i=0;i<ic;++i){var pair=pairs[i];var j=i*2;result[j]=pair.Key;result[j+1]=pair.Value;}return
- result;}public static void NormalizeRangeArray(int[]packedRanges){var pairs=ToPairs(packedRanges);NormalizeRangeList(pairs);for(var i=0;i<pairs.Length;++i)
-{var j=i*2;packedRanges[j]=pairs[i].Key;packedRanges[j+1]=pairs[i].Value;}}public static void NormalizeRangeList(IList<KeyValuePair<int,int>>pairs){_Sort(pairs,
-0,pairs.Count-1);var or=default(KeyValuePair<int,int>);for(int i=1;i<pairs.Count;++i){if(pairs[i-1].Value>=pairs[i].Key){var nr=new KeyValuePair<int,int>(pairs[i
--1].Key,pairs[i].Value);pairs[i-1]=or=nr;pairs.RemoveAt(i);--i;}}}public static IEnumerable<KeyValuePair<int,int>>NotRanges(IEnumerable<KeyValuePair<int,int>>
-ranges){ var last=0x10ffff;using(var e=ranges.GetEnumerator()){if(!e.MoveNext()){yield return new KeyValuePair<int,int>(0x0,0x10ffff);yield break;}if(e.Current.Key
->0){yield return new KeyValuePair<int,int>(0,unchecked(e.Current.Key-1));last=e.Current.Value;if(0x10ffff<=last)yield break;}while(e.MoveNext()){if(0x10ffff
-<=last)yield break;if(unchecked(last+1)<e.Current.Key)yield return new KeyValuePair<int,int>(unchecked(last+1),unchecked((e.Current.Key-1)));last=e.Current.Value;
-}if(0x10ffff>last)yield return new KeyValuePair<int,int>(unchecked((last+1)),0x10ffff);}}public static int[]GetRanges(IEnumerable<int>sortedChars){var
- result=new List<int>();int first;int last;using(var e=sortedChars.GetEnumerator()){bool moved=e.MoveNext();while(moved){first=last=e.Current;while((moved
-=e.MoveNext())&&(e.Current==last||e.Current==last+1)){last=e.Current;}result.Add(first);result.Add(last);}}return result.ToArray();}static void _Sort(IList<KeyValuePair<int,int>>
-arr,int left,int right){if(left<right){int pivot=_Partition(arr,left,right);if(1<pivot){_Sort(arr,left,pivot-1);}if(pivot+1<right){_Sort(arr,pivot+1,right);
-}}}static int _ComparePairTo(KeyValuePair<int,int>x,KeyValuePair<int,int>y){var c=x.Key.CompareTo(y.Key);if(c!=0)return c;return x.Value.CompareTo(y.Value);
-}static int _Partition(IList<KeyValuePair<int,int>>arr,int left,int right){KeyValuePair<int,int>pivot=arr[left];while(true){while(0<_ComparePairTo(arr[left],pivot))
-{++left;}while(0>_ComparePairTo(arr[right],pivot)){--right;}if(left<right){if(0==_ComparePairTo(arr[left],arr[right]))return right;var swap=arr[left];
-arr[left]=arr[right];arr[right]=swap;}else{return right;}}}}}
+ cur=-1;while(0<currentFiberCount){bool passed=false;for(i=0;i<currentFiberCount;++i){var lpassed=false;var shouldLog=false;var t=currentFibers[i];pc=
+t.Program[t.Index];saved=t.Saved;switch(pc[0]){case Compiler.Switch:var idx=1;shouldLog=true;while(idx<pc.Length&&-2<pc[idx]){if(_InRanges(pc,ref idx,
+cur)){while(-1!=pc[idx])++idx;++idx;lpassed=true;passed=true;_EnqueueFiber(ref nextFiberCount,ref nextFibers,new _Fiber(t,pc[idx],saved),sp+1);idx=pc.Length;
+break;}else{while(-1!=pc[idx])++idx;++idx;}++idx;}if(idx<pc.Length&&-2==pc[idx]){++idx;while(pc.Length>idx){_EnqueueFiber(ref nextFiberCount,ref nextFibers,
+new _Fiber(t,pc[idx],saved),sp);if(currentFiberCount>maxFiberCount)maxFiberCount=currentFiberCount;++idx;}}break;case Compiler.Char:shouldLog=true;if(cur
+==pc[1]){goto case Compiler.Any;}break;case Compiler.Set:shouldLog=true;idx=1;if(_InRanges(pc,ref idx,cur)){goto case Compiler.Any;}break;case Compiler.NSet:
+shouldLog=true;idx=1;if(!_InRanges(pc,ref idx,cur)){goto case Compiler.Any;}break;case Compiler.UCode:shouldLog=true;var str=char.ConvertFromUtf32(cur);
+if(unchecked((int)char.GetUnicodeCategory(str,0)==pc[1])){goto case Compiler.Any;}break;case Compiler.NUCode:shouldLog=true;str=char.ConvertFromUtf32(cur);
+if(unchecked((int)char.GetUnicodeCategory(str,0))!=pc[1]){goto case Compiler.Any;}break;case Compiler.Any:shouldLog=true;if(LexContext.EndOfInput!=input.Current)
+{passed=true;lpassed=true;_EnqueueFiber(ref nextFiberCount,ref nextFibers,new _Fiber(t,t.Index+1,saved),sp+1);}break;case Compiler.Match:matched=saved;
+match=pc[1]; i=currentFiberCount;break;}if(shouldLog){++passes;_LogInstruction(input,pc,cur,sp,lpassed,log);}}if(passed){sb.Append(char.ConvertFromUtf32(cur));
+input.Advance();if(LexContext.EndOfInput!=input.Current){var ch1=unchecked((char)input.Current);if(char.IsHighSurrogate(ch1)){if(-1==input.Advance())throw
+ new ExpectingException("Expecting low surrogate in unicode stream. The input source is corrupt or not valid Unicode",input.Line,input.Column,input.Position,
+input.FileOrUrl);++sp;var ch2=unchecked((char)input.Current);cur=char.ConvertToUtf32(ch1,ch2);}else cur=ch1;}else cur=-1;++sp;}tmp=currentFibers;currentFibers
+=nextFibers;nextFibers=tmp;currentFiberCount=nextFiberCount;nextFiberCount=0;}if(null!=matched){var start=matched[0]; var len=matched[1];input.CaptureBuffer.Append(sb.ToString(start,
+len-start));result=match;return new LexStatistics(maxFiberCount,passes/(sp+1f));}result=-1; return new LexStatistics(maxFiberCount,passes/(sp+1f));}static
+ void _LogInstruction(LexContext input,int[]pc,int cur,int sp,bool passed,TextWriter log){log.WriteLine("["+sp+"] "+(cur!=-1?char.ConvertFromUtf32(cur):"<EOI>")
++": "+Compiler.ToString(pc)+" "+(passed?"passed":(pc[0]==Compiler.Switch&&-1<Array.IndexOf(pc,-2)?"defaulted":"failed")));}static bool _InRanges(int[]
+pc,ref int index,int ch){var found=false; for(var j=index;j<pc.Length;++j){if(0>pc[j]){index=j;return false;} var first=pc[j];++j;var last=pc[j]; if(ch
+<=last){if(first<=ch)found=true;index=j;return found;}}index=pc.Length;return found;}static void _EnqueueFiber(ref int lcount,ref _Fiber[]l,_Fiber t,int
+ sp){ if(l.Length<=lcount){var newarr=new _Fiber[l.Length*2];Array.Copy(l,0,newarr,0,l.Length);l=newarr;}l[lcount]=t;++lcount;var pc=t.Program[t.Index];
+switch(pc[0]){case Compiler.Jmp:for(var j=1;j<pc.Length;j++)_EnqueueFiber(ref lcount,ref l,new _Fiber(t.Program,pc[j],t.Saved),sp);break;case Compiler.Save:
+var slot=pc[1];var max=slot>t.Saved.Length?slot:t.Saved.Length;var saved=new int[max];for(var i=0;i<t.Saved.Length;++i)saved[i]=t.Saved[i];saved[slot]
+=sp;_EnqueueFiber(ref lcount,ref l,new _Fiber(t,t.Index+1,saved),sp);break;}}private struct _Fiber{public readonly int[][]Program;public readonly int Index;
+public int[]Saved;public _Fiber(int[][]program,int index,int[]saved){Program=program;Index=index;Saved=saved;}public _Fiber(_Fiber fiber,int index,int[]
+saved){Program=fiber.Program;Index=index;Saved=saved;}public override string ToString(){return Disassemble(new int[][]{Program[Index]}).Substring(7);}
+}}}namespace L{public struct LexStatistics{public readonly int MaxFiberCount;public readonly float AverageCharacterPasses;public LexStatistics(int maxFiberCount,float
+ averageCharacterPasses){MaxFiberCount=maxFiberCount;AverageCharacterPasses=averageCharacterPasses;}}}namespace L{static class RangeUtility{public static
+ int[]Merge(int[]x,int[]y){var pairs=new List<KeyValuePair<int,int>>((x.Length+y.Length)/2);pairs.AddRange(ToPairs(x));pairs.AddRange(ToPairs(y));NormalizeRangeList(pairs);
+return FromPairs(pairs);}public static bool Intersects(int[]x,int[]y){if(null==x||null==y)return false;if(x==y)return true;for(var i=0;i<x.Length;i+=2)
+{for(var j=0;j<y.Length;j+=2){if(Intersects(x[i],x[i+1],y[j],y[j+1]))return true;if(x[i]>y[j+1])return false;}}return false;}public static bool Intersects(int
+ xf,int xl,int yf,int yl){return(xf>=yf&&xf<=yl)||(xl>=yf&&xl<=yl);}public static KeyValuePair<int,int>[]ToPairs(int[]packedRanges){var result=new KeyValuePair<int,
+int>[packedRanges.Length/2];for(var i=0;i<result.Length;++i){var j=i*2;result[i]=new KeyValuePair<int,int>(packedRanges[j],packedRanges[j+1]);}return result;
+}public static int[]FromPairs(IList<KeyValuePair<int,int>>pairs){var result=new int[pairs.Count*2];for(int ic=pairs.Count,i=0;i<ic;++i){var pair=pairs[i];
+var j=i*2;result[j]=pair.Key;result[j+1]=pair.Value;}return result;}public static void NormalizeRangeArray(int[]packedRanges){var pairs=ToPairs(packedRanges);
+NormalizeRangeList(pairs);for(var i=0;i<pairs.Length;++i){var j=i*2;packedRanges[j]=pairs[i].Key;packedRanges[j+1]=pairs[i].Value;}}public static void
+ NormalizeRangeList(IList<KeyValuePair<int,int>>pairs){_Sort(pairs,0,pairs.Count-1);var or=default(KeyValuePair<int,int>);for(int i=1;i<pairs.Count;++i)
+{if(pairs[i-1].Value>=pairs[i].Key){var nr=new KeyValuePair<int,int>(pairs[i-1].Key,pairs[i].Value);pairs[i-1]=or=nr;pairs.RemoveAt(i);--i;}}}public static
+ IEnumerable<KeyValuePair<int,int>>NotRanges(IEnumerable<KeyValuePair<int,int>>ranges){ var last=0x10ffff;using(var e=ranges.GetEnumerator()){if(!e.MoveNext())
+{yield return new KeyValuePair<int,int>(0x0,0x10ffff);yield break;}if(e.Current.Key>0){yield return new KeyValuePair<int,int>(0,unchecked(e.Current.Key-
+1));last=e.Current.Value;if(0x10ffff<=last)yield break;}while(e.MoveNext()){if(0x10ffff<=last)yield break;if(unchecked(last+1)<e.Current.Key)yield return
+ new KeyValuePair<int,int>(unchecked(last+1),unchecked((e.Current.Key-1)));last=e.Current.Value;}if(0x10ffff>last)yield return new KeyValuePair<int,int>(unchecked((last
++1)),0x10ffff);}}public static int[]GetRanges(IEnumerable<int>sortedChars){var result=new List<int>();int first;int last;using(var e=sortedChars.GetEnumerator())
+{bool moved=e.MoveNext();while(moved){first=last=e.Current;while((moved=e.MoveNext())&&(e.Current==last||e.Current==last+1)){last=e.Current;}result.Add(first);
+result.Add(last);}}return result.ToArray();}static void _Sort(IList<KeyValuePair<int,int>>arr,int left,int right){if(left<right){int pivot=_Partition(arr,
+left,right);if(1<pivot){_Sort(arr,left,pivot-1);}if(pivot+1<right){_Sort(arr,pivot+1,right);}}}static int _ComparePairTo(KeyValuePair<int,int>x,KeyValuePair<int,
+int>y){var c=x.Key.CompareTo(y.Key);if(c!=0)return c;return x.Value.CompareTo(y.Value);}static int _Partition(IList<KeyValuePair<int,int>>arr,int left,
+int right){KeyValuePair<int,int>pivot=arr[left];while(true){while(0<_ComparePairTo(arr[left],pivot)){++left;}while(0>_ComparePairTo(arr[right],pivot))
+{--right;}if(left<right){if(0==_ComparePairTo(arr[left],arr[right]))return right;var swap=arr[left];arr[left]=arr[right];arr[right]=swap;}else{return right;
+}}}}}
