@@ -424,7 +424,7 @@ internal class TokenizerEnumerator : object, IEnumerator<Token> {
                         for (
                         ; (idx < pc.Length); 
                         ) {
-                            TokenizerEnumerator._EnqueueFiber(ref currentFiberCount, ref this._currentFibers, new TokenizerFiber(t, pc[idx], saved), sp);
+                            TokenizerEnumerator._EnqueueFiber(ref nextFiberCount, ref this._nextFibers, new TokenizerFiber(t, pc[idx], saved), sp);
                             idx = (idx + 1);
                         }
                     }
@@ -577,8 +577,7 @@ internal partial class ExampleTokenizer : Tokenizer {
                     2,
                     2,
                     8,
-                    13,
-                    16},
+                    17},
             new int[] {
                     6,
                     65,
@@ -612,52 +611,56 @@ internal partial class ExampleTokenizer : Tokenizer {
                     0},
             new int[] {
                     3,
-                    45,
-                    45,
-                    -1,
-                    9,
-                    48,
-                    48,
-                    -1,
-                    11,
-                    49,
-                    57,
-                    -1,
-                    10},
-            new int[] {
-                    3,
-                    49,
-                    57,
-                    -1,
-                    10},
-            new int[] {
-                    3,
-                    48,
-                    57,
-                    -1,
-                    10,
-                    -2,
-                    11},
-            new int[] {
-                    10,
-                    1},
-            new int[] {
-                    1,
-                    1},
-            new int[] {
-                    3,
                     9,
                     13,
                     32,
                     32,
                     -1,
-                    14},
+                    9,
+                    45,
+                    45,
+                    -1,
+                    11,
+                    48,
+                    48,
+                    -1,
+                    15,
+                    49,
+                    57,
+                    -1,
+                    12},
             new int[] {
                     10,
                     1},
             new int[] {
                     1,
                     2},
+            new int[] {
+                    3,
+                    49,
+                    57,
+                    -1,
+                    12},
+            new int[] {
+                    3,
+                    48,
+                    57,
+                    -1,
+                    12,
+                    -2,
+                    13},
+            new int[] {
+                    10,
+                    1},
+            new int[] {
+                    1,
+                    1},
+            new int[] {
+                    10,
+                    1},
+            new int[] {
+                    1,
+                    1},
             new int[] {
                     4},
             new int[] {

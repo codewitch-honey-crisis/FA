@@ -183,6 +183,10 @@ namespace L
 				asts[i] = Ast.Parse(LexContext.Create(expressions[i]));
 			return Compiler.EmitLexer(optimize,asts);
 		}
+		public static int[][] CompileLexer(bool optimize,params object[] parts)
+		{
+			return Compiler.EmitLexer(optimize, parts);
+		}
 		/// <summary>
 		/// Links a series of partial programs together into single lexer program
 		/// </summary>
@@ -500,55 +504,53 @@ namespace L
 							break;
 						case Compiler.Char:
 							shouldLog = true;
-							if (cur != pc[1])
+							if (cur == pc[1])
 							{
-								break;
+								goto case Compiler.Any;
 							}
-							goto case Compiler.Any;
+							break;
 						case Compiler.Set:
-							shouldLog = true; 
-							idx = 1;
-							if (!_InRanges(pc, ref idx, cur))
-							{
-								break;
-							}
-							goto case Compiler.Any;
-						case Compiler.NSet:
-
 							shouldLog = true; 
 							idx = 1;
 							if (_InRanges(pc, ref idx, cur))
 							{
-								break;
+								goto case Compiler.Any;
 							}
-							goto case Compiler.Any;
+							break;
+						case Compiler.NSet:
+							shouldLog = true; 
+							idx = 1;
+							if (!_InRanges(pc, ref idx, cur))
+							{
+								goto case Compiler.Any;
+							}
+							break;
 						case Compiler.UCode:
 							shouldLog = true; 
 							var str = char.ConvertFromUtf32(cur);
-							if (unchecked((int)char.GetUnicodeCategory(str, 0) != pc[1]))
+							if (unchecked((int)char.GetUnicodeCategory(str, 0) == pc[1]))
 							{
-								break;
+								goto case Compiler.Any;
 							}
-							goto case Compiler.Any;
+							break;
 						case Compiler.NUCode:
 							shouldLog = true;
 							str = char.ConvertFromUtf32(cur);
-							if (unchecked((int)char.GetUnicodeCategory(str, 0)) == pc[1])
+							if (unchecked((int)char.GetUnicodeCategory(str, 0)) != pc[1])
 							{
-								break;
+								goto case Compiler.Any;
 							}
-							goto case Compiler.Any;
+							break;
 
 						case Compiler.Any:
 							shouldLog = true;
-							if (LexContext.EndOfInput == input.Current)
+							if (LexContext.EndOfInput != input.Current)
 							{
-								break;
+
+								passed = true;
+								lpassed = true;
+								_EnqueueFiber(ref nextFiberCount, ref nextFibers, new _Fiber(t, t.Index + 1, saved), sp + 1);
 							}
-							passed = true;
-							lpassed = true;
-							_EnqueueFiber(ref nextFiberCount, ref nextFibers, new _Fiber(t, t.Index + 1, saved), sp + 1);
-							
 							break;
 						case Compiler.Match:
 							matched = saved;
@@ -567,8 +569,7 @@ namespace L
 						
 					}
 				}
-				if (-1 != match)
-					break;
+
 				if (passed)
 				{
 					sb.Append(char.ConvertFromUtf32(cur));
@@ -592,14 +593,14 @@ namespace L
 					else
 						cur = -1;
 					++sp;
-				} 
+				}
 				tmp = currentFibers;
 				currentFibers = nextFibers;
 				nextFibers = tmp;
 				currentFiberCount = nextFiberCount;
 				nextFiberCount = 0;
-
 			}
+			
 
 			if (null != matched)
 			{

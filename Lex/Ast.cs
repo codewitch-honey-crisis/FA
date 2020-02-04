@@ -5,6 +5,9 @@ using System.Text;
 using LC;
 namespace L
 {
+#if LLIB
+	public
+#endif
 	sealed class Ast
 	{
 		#region Kinds
@@ -82,7 +85,26 @@ namespace L
 					throw new NotImplementedException();
 			}
 		}
-		internal static Ast Parse(LexContext pc)
+		public static Ast FromLiteral(IEnumerable<char> literal)
+		{
+			var exprs = new List<Ast> ();
+			foreach(var ich in UnicodeUtility.ToUtf32(literal))
+			{
+				var ast = new Ast();
+				ast.Kind = Lit;
+				ast.Value = ich;
+				exprs.Add(ast);
+			}
+			if (0 == exprs.Count)
+				throw new ArgumentException("The string cannot be empty", "literal");
+			if (1 == exprs.Count)
+				return exprs[0];
+			var result = new Ast();
+			result.Kind = Cat;
+			result.Exprs = exprs.ToArray();
+			return result;
+		}
+		public static Ast Parse(LexContext pc)
 		{
 			Ast result = null, next = null;
 			int ich;

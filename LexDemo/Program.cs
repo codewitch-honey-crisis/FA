@@ -1,5 +1,5 @@
 ﻿#define RUNPERF
-//#define VERBOSE
+#define VERBOSE
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -10,6 +10,7 @@ namespace LexDemo
 {
 	class Program
 	{
+		
 		static void Main()
 		{
 			var test = "fubar bar 123 1foo bar -243 0 baz 83";
@@ -104,8 +105,7 @@ namespace LexDemo
 #endif
 			_RunLexer(progOpt);
 			Console.Error.WriteLine();
-			Console.Error.WriteLine();
-			//_RunLexer(progDfa);
+			
 		}
 		static void _Perf(int[][] prog,string test)
 		{
@@ -126,13 +126,13 @@ namespace LexDemo
 					if (!PrecisionDateTime.IsAvailable)
 					{
 						sw.Start();
-						var acc = Lex.Run(prog, lc);
+						Lex.Run(prog, lc);
 						sw.Stop();
 						elapsed += sw.Elapsed;
 					} else
 					{
 						utcStart = PrecisionDateTime.UtcNow;
-						var acc = Lex.Run(prog, lc);
+						Lex.Run(prog, lc);
 						utcEnd = PrecisionDateTime.UtcNow;
 						elapsed += (utcEnd - utcStart);
 					}
@@ -178,9 +178,15 @@ namespace LexDemo
 					TextWriter.Null
 #endif
 					,out acc);
+				acc = Lex.Run(prog, lc);
 				// lex our next input and dump it
 				Console.WriteLine("{0}: \"{1}\"", acc, lc.GetCapture());
 			}
+		}
+		static void _RunDump()
+		{
+			var prog = Lex.AssembleFrom(@"..\..\dump.lasm");
+			_RunLexer(prog);
 		}
 	}
 }

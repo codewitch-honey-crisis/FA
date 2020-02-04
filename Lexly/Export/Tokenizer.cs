@@ -483,11 +483,12 @@ namespace Lexly
 						matched = saved;
 						match = pc[1];
 
-						// break the for loop:
-						i = currentFiberCount;
+						i=currentFiberCount; // break for loop
+
 					}
 
 				}
+				
 				if (passed)
 				{
 					_capture.Append(char.ConvertFromUtf32(cur));
@@ -517,6 +518,8 @@ namespace Lexly
 				_nextFibers = tmp;
 				currentFiberCount = nextFiberCount;
 				nextFiberCount = 0;
+				
+				
 
 			}
 

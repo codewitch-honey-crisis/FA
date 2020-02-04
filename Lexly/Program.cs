@@ -512,12 +512,11 @@ namespace Lexly
 						var pc2 = LexContext.Create(pc.GetCapture());
 						pc2.EnsureStarted();
 						pc2.SetLocation(pc.Line, pc.Column, pc.Position, pc.FileOrUrl);
+						rule.Regex = pc.GetCapture();
+						// we compile it twice essentially but once for dumping
+						// and pre-validation
 						rule.Part = Lex.CompileRegexPart(pc2,
-#if OPTIMIZE
-							true
-#else
 							false
-#endif
 
 							) ;
 						pc.Advance();
@@ -526,10 +525,13 @@ namespace Lexly
 					{
 						var str = pc.ParseJsonString();
 						rule.Part = Lex.CompileLiteralPart(str);
+						rule.Literal = str;
 					}
 				} else
 				{
+					var ll = pc.CaptureBuffer.Length;
 					rule.Part=Lex.Assemble(pc);
+					
 					pc.Expecting('}');
 					pc.Advance();
 				}
@@ -559,19 +561,40 @@ namespace Lexly
 					Console.Error.WriteLine();
 				}
 			}
+#if !OPTIMIZE
 			var prog = Lex.LinkLexerParts(
-#if OPTIMIZE
-				true
-#else
 				false
-#endif
 				, parts);
 			if (dump)
 			{
-				Console.Error.WriteLine("Disassembly of lexer:");
+				Console.Error.WriteLine("Disassembly of unoptimized lexer:");
 				Console.Error.WriteLine(Lex.Disassemble(prog));
 				Console.Error.WriteLine();
 			}
+#else
+			var exprs = new List<object>();
+			for(int ic=rules.Count,i = 0;i<ic;++i)
+			{
+				var r = rules[i];
+				if (null != r.Literal)
+				{
+					exprs.Add(r.Literal);
+				}
+				else if (null != r.Regex)
+				{
+					exprs.Add(Ast.Parse(LexContext.Create(r.Regex)));
+				}
+				else
+					exprs.Add(r.Part);
+			}
+			var prog = Lex.CompileLexer(true, exprs.ToArray());
+			if (dump)
+			{
+				Console.Error.WriteLine("Disassembly of optimized lexer:");
+				Console.Error.WriteLine(Lex.Disassemble(prog));
+				Console.Error.WriteLine();
+			}
+#endif
 			return prog;
 		}
 
@@ -646,6 +669,8 @@ namespace Lexly
 		public int Line;
 		public int Column;
 		public long Position;
+		public string Regex;
+		public string Literal;
 	}
 	
 }

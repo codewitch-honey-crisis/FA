@@ -1,0 +1,18 @@
+﻿L0000: save 0
+L0001: jmp L0002, L0006, L0015
+L0002: set "A".."Z", "_", "a".."z"
+L0003: jmp L0006, L0008
+L0004: set "0".."9", "A".."Z", "_", "a".."z"
+L0005: jmp L0005
+L0006: switch case "\t".."\r", " ":L0007, case "-":L0009, case "0":L0013, case "1".."9":L0010
+L0007: save 1
+L0008: match 2
+L0009: switch case "1".."9":L0010
+L0010: switch case "0".."9":L0010, default:L0011
+L0011: save 1
+L0012: match 1
+L0013: save 1
+L0014: match 1
+L0015: any
+L0016: save 1
+L0017: match -1

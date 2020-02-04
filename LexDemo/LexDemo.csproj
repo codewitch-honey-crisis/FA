@@ -48,6 +48,7 @@
     <None Include="dfa - Copy.lasm" />
     <None Include="dfa.lasm" />
     <None Include="int.lasm" />
+    <None Include="dump.lasm" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\LexContext\LexContext.csproj">

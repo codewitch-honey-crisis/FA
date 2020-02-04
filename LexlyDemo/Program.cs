@@ -5,7 +5,10 @@ using System.IO;
 using LC;
 using L;
 #endregion
-
+/* Build Evenets
+"$(SolutionDir)Lexly.exe" "$(ProjectDir)Example.lx" /output "$(ProjectDir)ExampleTokenizer.cs" /namespace LexlyDemo
+"$(SolutionDir)Lexly.exe" "$(ProjectDir)Slang.lx" /output "$(ProjectDir)SlangTokenizer.cs" /namespace LexlyDemo /noshared
+*/
 namespace LexlyDemo
 {
 	using TestTokenizer = ExampleTokenizer;
@@ -18,7 +21,7 @@ namespace LexlyDemo
 
 			using (var sr = new StreamReader(@"..\..\Program.cs"))
 				text = sr.ReadToEnd();
-			
+
 			Console.WriteLine("Lex: " + text);
 
 			var tokenizer = new TestTokenizer(text); // generated from Example.lx
@@ -29,7 +32,11 @@ namespace LexlyDemo
 			
 			foreach (var tok in tokenizer)
 			{
-				Console.WriteLine("{0}: {1}", tok.SymbolId, tok.Value);
+				// we don't want errors or whitespace but we don't know the symbol
+				// id for whitespace because you can switch tokenizers around
+				// so we check tok.Value instead
+				if(-1!=tok.SymbolId && !string.IsNullOrWhiteSpace(tok.Value))
+					Console.WriteLine("{0}: {1}", tok.SymbolId, tok.Value);
 			}
 			
 			Stopwatch sw = new Stopwatch();

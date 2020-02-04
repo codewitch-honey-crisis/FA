@@ -665,7 +665,9 @@ namespace L
 					throw new InvalidProgramException("The instruction is not valid");
 			}
 		}
-		internal static int[][] EmitLexer(bool optimize, params Ast[] expressions)
+		// hate taking object[] but have no choice
+		// expressions can be Ast or string or int[][]
+		internal static int[][] EmitLexer(bool optimize, params object[] expressions)
 		{
 			var fragments = new List<int[][]>(expressions.Length);
 			var ordered = new List<object>(); // i wish C# had proper unions
@@ -677,23 +679,34 @@ namespace L
 				{
 					while (i < expressions.Length)
 					{
-						FA fa = null;
-						try
+						var ast = expressions[i] as Ast;
+						if(null==ast)
 						{
-							fa = expressions[i].ToFA(i);
+							var str = expressions[i] as string;
+							if (null != str)
+								ast = Ast.FromLiteral(str);
 						}
-						// we can't do lazy expressions
-						catch (NotSupportedException) { }
-						if (null == fa)
+						if (null != ast)
 						{
-							if (0 < workingFA.Count)
+							FA fa = null;
+							try
 							{
-								ordered.Add(workingFA);
-								workingFA = new List<FA>();
+								fa = ast.ToFA(i);
 							}
-							break;
+							// we can't do lazy expressions
+							catch (NotSupportedException) { }
+							if (null == fa)
+							{
+								if (0 < workingFA.Count)
+								{
+									ordered.Add(workingFA);
+									workingFA = new List<FA>();
+								}
+								break;
+							}
+							workingFA.Add(fa);
 						}
-						workingFA.Add(fa);
+						else break;
 						++i;
 					}
 					if (i == expressions.Length)
@@ -706,17 +719,27 @@ namespace L
 					}
 					while (i < expressions.Length)
 					{
-						FA fa;
-						try
+						var ast = expressions[i] as Ast;
+						if (null == ast)
 						{
-							fa = expressions[i].ToFA(i);
-							workingFA.Add(fa);
-							++i;
-							if (i == expressions.Length)
-								ordered.Add(workingFA);
-							break;
+							var str = expressions[i] as string;
+							if (null != str)
+								ast = Ast.FromLiteral(str);
 						}
-						catch { }
+						if (null != ast)
+						{
+							FA fa;
+							try
+							{
+								fa = ast.ToFA(i);
+								workingFA.Add(fa);
+								++i;
+								if (i == expressions.Length)
+									ordered.Add(workingFA);
+								break;
+							}
+							catch { }
+						}
 						ordered.Add(expressions[i]);
 						++i;
 					}
@@ -735,7 +758,7 @@ namespace L
 						root = root.ToDfa();
 						root.TrimDuplicates();
 						ordered[i] = root;
-					}
+					} 
 				}
 			} else
 			{
@@ -755,13 +778,29 @@ namespace L
 				}
 				else
 				{
-					EmitAstInnerPart(ordered[i] as Ast, l);
-					var save = new int[] { Save, 1 };
-					l.Add(save);
-					var match = new int[2];
-					match[0] = Match;
-					match[1] = i;
-					l.Add(match);
+					var ast = ordered[i] as Ast;
+					if (null != ast)
+					{
+						EmitAstInnerPart(ordered[i] as Ast, l);
+						var save = new int[] { Save, 1 };
+						l.Add(save);
+						var match = new int[2];
+						match[0] = Match;
+						match[1] = i;
+						l.Add(match);
+					} else
+					{
+						var frag= ordered[i] as int[][];
+						Fixup(frag, l.Count);
+						l.AddRange(frag);
+						// TODO: add check for linker attribute (somehow?)
+						var save = new int[] { Save, 1 };
+						l.Add(save);
+						var match = new int[2];
+						match[0] = Match;
+						match[1] = i;
+						l.Add(match);
+					}
 				}
 				fragments.Add(l.ToArray());
 			}
