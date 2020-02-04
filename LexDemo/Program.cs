@@ -109,7 +109,7 @@ namespace LexDemo
 		}
 		static void _Perf(int[][] prog,string test)
 		{
-			var sw = PrecisionDateTime.IsAvailable?null:new Stopwatch();
+			var sw = DateTimeUtility.HasPrecisionTime?null:new Stopwatch();
 			DateTime utcStart;
 			DateTime utcEnd;
 			TimeSpan elapsed=TimeSpan.Zero;
@@ -123,7 +123,7 @@ namespace LexDemo
 				while (LexContext.EndOfInput != lc.Current)
 				{
 					lc.ClearCapture();
-					if (!PrecisionDateTime.IsAvailable)
+					if (!DateTimeUtility.HasPrecisionTime)
 					{
 						sw.Start();
 						Lex.Run(prog, lc);
@@ -131,9 +131,9 @@ namespace LexDemo
 						elapsed += sw.Elapsed;
 					} else
 					{
-						utcStart = PrecisionDateTime.UtcNow;
+						utcStart = DateTimeUtility.UtcNow;
 						Lex.Run(prog, lc);
-						utcEnd = PrecisionDateTime.UtcNow;
+						utcEnd = DateTimeUtility.UtcNow;
 						elapsed += (utcEnd - utcStart);
 					}
 				}

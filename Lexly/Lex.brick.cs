@@ -236,21 +236,23 @@ rep=new Ast();rep.Kind=Ast.Rep;rep.Min=rep.Max=ast.Max-ast.Min;EmitAstInnerPart(
  void EmitFAPart(FA fa,IList<int[]>prog){ if(fa.IsNeutral){foreach(var efa in fa.EpsilonTransitions){fa=efa;}}var acc=fa.FillAcceptingStates();foreach(var
  afa in acc){if(!afa.IsFinal){var ffa=new FA(true,afa.AcceptSymbol);afa.EpsilonTransitions.Add(ffa);afa.IsAccepting=false;}}var rendered=new Dictionary<FA,
 int>();var swFixups=new Dictionary<FA,int>();var jmpFixups=new Dictionary<FA,int>();var l=new List<FA>();fa.FillClosure(l);for(int ic=l.Count,i=0;i<ic;++i)
-{var cfa=l[i];rendered.Add(cfa,prog.Count);if(!cfa.IsFinal){int swfixup=prog.Count;prog.Add(null); swFixups.Add(cfa,swfixup);}else{
+{var reused=false;var cfa=l[i];if(!cfa.IsFinal){rendered.Add(cfa,prog.Count);}else{foreach(var r in rendered){if(r.Key.IsFinal){if(r.Key.IsAccepting&&
+cfa.AcceptSymbol==r.Key.AcceptSymbol){ rendered.Add(cfa,r.Value);reused=true;break;}}}if(!reused)rendered.Add(cfa,prog.Count);}if(!cfa.IsFinal){int swfixup
+=prog.Count;prog.Add(null); swFixups.Add(cfa,swfixup);}else{
 #if DEBUG
 System.Diagnostics.Debug.Assert(cfa.IsAccepting);
 #endif
-prog.Add(new int[]{Save,1}); prog.Add(new int[]{Match,cfa.AcceptSymbol});}}for(int ic=l.Count,i=0;i<ic;++i){var cfa=l[i];if(!cfa.IsFinal){var sw=new List<int>();
-sw.Add(Switch);var rngGrps=cfa.FillInputTransitionRangesGroupedByState();foreach(var grp in rngGrps){var dst=rendered[grp.Key];sw.AddRange(grp.Value);
-sw.Add(-1);sw.Add(dst);}if(1<sw.Count){if(0<cfa.EpsilonTransitions.Count){sw.Add(-2);foreach(var efa in cfa.EpsilonTransitions){var dst=rendered[efa];
-sw.Add(dst);}}}else{ sw[0]=Jmp;sw.Add(swFixups[cfa]+1);}prog[swFixups[cfa]]=sw.ToArray();} var jfi=-1;if(jmpFixups.TryGetValue(cfa,out jfi)){var jmp=new
- int[2];jmp[0]=Jmp;jmp[1]=prog.Count;prog[jfi]=jmp;}}}static void EmitAstInnerPart(FA fa,IDictionary<FA,int>rendered,IList<int[]>prog){if(fa.IsFinal)return;
-int swfixup=prog.Count;var sw=new List<int>();sw.Add(Switch);prog.Add(null);foreach(var trns in fa.InputTransitions){var dst=-1;if(!rendered.TryGetValue(trns.Value,out
- dst)){dst=prog.Count;rendered.Add(trns.Value,dst);EmitAstInnerPart(trns.Value,rendered,prog);}sw.Add(trns.Key.Key);sw.Add(trns.Key.Value);sw.Add(-1);
-sw.Add(dst);}if(0<fa.InputTransitions.Count&&0<fa.EpsilonTransitions.Count)sw.Add(-2);else if(0==fa.InputTransitions.Count)sw[0]=Jmp;foreach(var efa in
- fa.EpsilonTransitions){int dst;if(!rendered.TryGetValue(efa,out dst)){dst=prog.Count;rendered.Add(efa,dst);EmitAstInnerPart(efa,rendered,prog);}sw.Add(dst);
-}prog[swfixup]=sw.ToArray();}static string _FmtLbl(int i){return string.Format("L{0,4:000#}",i);}public static string ToString(IEnumerable<int[]>prog)
-{var sb=new StringBuilder();var i=0;foreach(var inst in prog){sb.Append(_FmtLbl(i));sb.Append(": ");sb.AppendLine(ToString(inst));++i;}return sb.ToString();
+if(!reused){prog.Add(new int[]{Save,1}); prog.Add(new int[]{Match,cfa.AcceptSymbol});}}}for(int ic=l.Count,i=0;i<ic;++i){var cfa=l[i];if(!cfa.IsFinal)
+{var sw=new List<int>();sw.Add(Switch);var rngGrps=cfa.FillInputTransitionRangesGroupedByState();foreach(var grp in rngGrps){var dst=rendered[grp.Key];
+sw.AddRange(grp.Value);sw.Add(-1);sw.Add(dst);}if(1<sw.Count){if(0<cfa.EpsilonTransitions.Count){sw.Add(-2);foreach(var efa in cfa.EpsilonTransitions)
+{var dst=rendered[efa];sw.Add(dst);}}}else{ sw[0]=Jmp;sw.Add(swFixups[cfa]+1);}prog[swFixups[cfa]]=sw.ToArray();}var jfi=-1;if(jmpFixups.TryGetValue(cfa,
+out jfi)){var jmp=new int[2];jmp[0]=Jmp;jmp[1]=prog.Count;prog[jfi]=jmp;}}}static void EmitAstInnerPart(FA fa,IDictionary<FA,int>rendered,IList<int[]>
+prog){if(fa.IsFinal)return;int swfixup=prog.Count;var sw=new List<int>();sw.Add(Switch);prog.Add(null);foreach(var trns in fa.InputTransitions){var dst
+=-1;if(!rendered.TryGetValue(trns.Value,out dst)){dst=prog.Count;rendered.Add(trns.Value,dst);EmitAstInnerPart(trns.Value,rendered,prog);}sw.Add(trns.Key.Key);
+sw.Add(trns.Key.Value);sw.Add(-1);sw.Add(dst);}if(0<fa.InputTransitions.Count&&0<fa.EpsilonTransitions.Count)sw.Add(-2);else if(0==fa.InputTransitions.Count)
+sw[0]=Jmp;foreach(var efa in fa.EpsilonTransitions){int dst;if(!rendered.TryGetValue(efa,out dst)){dst=prog.Count;rendered.Add(efa,dst);EmitAstInnerPart(efa,
+rendered,prog);}sw.Add(dst);}prog[swfixup]=sw.ToArray();}static string _FmtLbl(int i){return string.Format("L{0,4:000#}",i);}public static string ToString(IEnumerable<int[]>
+prog){var sb=new StringBuilder();var i=0;foreach(var inst in prog){sb.Append(_FmtLbl(i));sb.Append(": ");sb.AppendLine(ToString(inst));++i;}return sb.ToString();
 }static string _ToStr(int ch){return string.Concat('\"',_EscChar(ch),'\"');}static string _EscChar(int ch){switch(ch){case'.':case'/': case'(':case')':
 case'[':case']':case'<': case'>':case'|':case';': case'\'': case'\"':case'{':case'}':case'?':case'*':case'+':case'$':case'^':case'\\':return"\\"+char.ConvertFromUtf32(ch);
 case'\t':return"\\t";case'\n':return"\\n";case'\r':return"\\r";case'\0':return"\\0";case'\f':return"\\f";case'\v':return"\\v";case'\b':return"\\b";default:
