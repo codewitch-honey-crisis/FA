@@ -186,9 +186,9 @@ namespace L
 		/// <summary>
 		/// Takes a series of symbol ids paired with parts (which can be a string literal, an Ast expression, or an int[][] program fragment) and creates a lexer from them
 		/// </summary>
-		/// <param name="optimize"></param>
-		/// <param name="parts"></param>
-		/// <returns></returns>
+		/// <param name="optimize">True to optimize, otherwise false</param>
+		/// <param name="parts">The parts to merge</param>
+		/// <returns>A new lexer composed of the specified parts</returns>
 		public static int[][] CompileLexer(bool optimize,params KeyValuePair<int,object>[] parts)
 		{
 			return Compiler.EmitLexer(optimize, parts);

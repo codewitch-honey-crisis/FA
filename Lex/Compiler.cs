@@ -666,23 +666,23 @@ namespace L
 			}
 		}
 		// hate taking object but have no choice
-		// expressions can be Ast or string or int[][]
-		internal static int[][] EmitLexer(bool optimize, params KeyValuePair<int,object>[] expressions)
+		// expressions can be KeyValuePair<int,object> where object is Ast or string or int[][] and int is the symbol id
+		internal static int[][] EmitLexer(bool optimize, params KeyValuePair<int,object>[] parts)
 		{
-			var fragments = new List<int[][]>(expressions.Length);
+			var fragments = new List<int[][]>(parts.Length);
 			var ordered = new List<object>(); // i wish C# had proper unions
 			var i = 0;
 			if (optimize)
 			{
 				var workingFA = new List<FA>();
-				while (i < expressions.Length)
+				while (i < parts.Length)
 				{
-					while (i < expressions.Length)
+					while (i < parts.Length)
 					{
-						var ast = expressions[i].Value as Ast;
+						var ast = parts[i].Value as Ast;
 						if(null==ast)
 						{
-							var str = expressions[i].Value as string;
+							var str = parts[i].Value as string;
 							if (null != str)
 								ast = Ast.FromLiteral(str);
 						}
@@ -691,7 +691,7 @@ namespace L
 							FA fa = null;
 							try
 							{
-								fa = ast.ToFA(expressions[i].Key);
+								fa = ast.ToFA(parts[i].Key);
 							}
 							// we can't do lazy expressions
 							catch (NotSupportedException) { }
@@ -709,7 +709,7 @@ namespace L
 						else break;
 						++i;
 					}
-					if (i == expressions.Length)
+					if (i == parts.Length)
 					{
 						if (0 < workingFA.Count)
 						{
@@ -717,12 +717,12 @@ namespace L
 							workingFA = new List<FA>();
 						}
 					}
-					while (i < expressions.Length)
+					while (i < parts.Length)
 					{
-						var ast = expressions[i].Value as Ast;
+						var ast = parts[i].Value as Ast;
 						if (null == ast)
 						{
-							var str = expressions[i].Value as string;
+							var str = parts[i].Value as string;
 							if (null != str)
 								ast = Ast.FromLiteral(str);
 						}
@@ -731,16 +731,16 @@ namespace L
 							FA fa;
 							try
 							{
-								fa = ast.ToFA(expressions[i].Key);
+								fa = ast.ToFA(parts[i].Key);
 								workingFA.Add(fa);
 								++i;
-								if (i == expressions.Length)
+								if (i == parts.Length)
 									ordered.Add(workingFA);
 								break;
 							}
 							catch { }
 						}
-						ordered.Add(expressions[i]);
+						ordered.Add(parts[i]);
 						++i;
 					}
 				}
@@ -762,9 +762,9 @@ namespace L
 				}
 			} else
 			{
-				for(i = 0;i<expressions.Length;++i)
+				for(i = 0;i<parts.Length;++i)
 				{
-					ordered.Add(expressions[i]);
+					ordered.Add(parts[i]);
 				}
 			}
 			i = 0;
