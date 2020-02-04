@@ -815,7 +815,31 @@ namespace L
 			var result =  _EmitLexer(fragments);
 			if(optimize)
 			{
-				result = new List<int[]>(RemoveDeadCode(result)).ToArray();
+				// remove dead code
+				var code = new List<int[]>(RemoveDeadCode(result));
+				var pc = code[1];
+				// remove initial jmp for error handling, if we can, replacing it with the switch's default
+				// from the next line
+				if(3==pc.Length && Jmp==pc[0])
+				{
+					if(2==pc[1] && result.Length-3==pc[2] && Switch == code[2][0])
+					{
+						pc = code[2];
+						var idef = Array.IndexOf(pc, -2);
+						if(0>idef)
+						{
+							var nsw = new int[pc.Length + 2];
+							Array.Copy(pc, 0, nsw, 0, pc.Length);
+							nsw[nsw.Length - 2] = -2;
+							nsw[nsw.Length - 1] = result.Length-3;
+							code[2] = nsw;
+							code.RemoveAt(1);
+							result = code.ToArray();
+							Fixup(result, -1);
+							
+						}
+					}
+				}
 			}
 			return result;
 		}

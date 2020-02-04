@@ -1,4 +1,4 @@
-﻿//#define RUNPERF
+﻿#define RUNPERF
 //#define VERBOSE
 using System;
 using System.Diagnostics;
@@ -38,7 +38,6 @@ namespace LexDemo
 			Console.WriteLine(Lex.Disassemble(progDfa));
 			Console.WriteLine();
 
-#if RUNPERF
 			var result = -1;
 			var count = 0f ;
 			var maxFiberCount = 0;
@@ -83,6 +82,7 @@ namespace LexDemo
 				++count;
 			}
 			Console.WriteLine("DFA ran with " + maxFiberCount + " max fibers and " + avgCharPasses+ " average char passes");
+#if RUNPERF
 
 			for (var i = 0; i < 5; ++i)
 				test = string.Concat(test, test);
