@@ -374,8 +374,33 @@ namespace L
 			fa.FillClosure(l);
 			for(int ic=l.Count,i=0;i<ic;++i)
 			{
+				var reused = false;
 				var cfa = l[i];	
-				rendered.Add(cfa, prog.Count);
+				if(!cfa.IsFinal)
+				{
+					rendered.Add(cfa, prog.Count);
+				} else
+				{
+					
+					foreach(var r in rendered)
+					{
+						if(r.Key.IsFinal)
+						{
+							if (r.Key.IsAccepting && cfa.AcceptSymbol == r.Key.AcceptSymbol)
+							{
+
+
+								// we can reuse this 
+								rendered.Add(cfa, r.Value);
+								reused = true;
+								break;
+							}
+						}
+					}
+					if (!reused)
+						rendered.Add(cfa, prog.Count);
+				}
+				
 				if (!cfa.IsFinal)
 				{
 					int swfixup = prog.Count;
@@ -386,8 +411,11 @@ namespace L
 #if DEBUG
 					System.Diagnostics.Debug.Assert(cfa.IsAccepting);
 #endif
-					prog.Add(new int[] { Save, 1 }); // save
-					prog.Add(new int[] { Match, cfa.AcceptSymbol});
+					if (!reused)
+					{
+						prog.Add(new int[] { Save, 1 }); // save
+						prog.Add(new int[] { Match, cfa.AcceptSymbol });
+					}
 				}
 			}
 			for(int ic=l.Count,i=0;i<ic;++i)
@@ -426,15 +454,7 @@ namespace L
 						sw.Add(swFixups[cfa] + 1);
 					}
 					prog[swFixups[cfa]] = sw.ToArray();
-				} /*else
-				{
-					var save = new int[] { Save, 1 };
-					prog.Add(save);
-					var match = new int[2];
-					match[0] = Match;
-					match[1] = cfa.AcceptSymbol;
-					prog.Add(match);
-				}*/
+				}
 				
 				var jfi = -1;
 				if (jmpFixups.TryGetValue(cfa, out jfi))
