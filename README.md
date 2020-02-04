@@ -46,13 +46,27 @@ What I needed was a way to use non-deterministic finite automata and forgo the t
 
 Then a few guys, namely, Rob Pike, Ken Thompson and Russ Cox gave me a fantastic idea that solves these problems efficiently, and in a very interesting way using a tiny virtual machine with a specialized instruction set to run a regular expression match. I've included articles on this in the further reading section. To me this approach is fascinating, as I just love bit twiddling like this. It also potentially lends itself to compilation in the native instruction set of a "real" target machine. I haven't implemented all of that here (yet!) but this is the baseline runtime engine. I should stress that my code draws from the concepts introduced by them and I wouldn't have done it this way without exposure to that code at that link - credit where it is due.
 
-The optimizing compiler still doesn't optimize entirely. There's a significant opportunity to optimize the initial split which should dramatically improve the results, but I haven't implemented it yet, as it's non-trivial.
+The optimizing compiler finally optimizes maybe 95% of the code (there's some duplicate code removal it doesn't do as it doesn't impact performance)
 
-It's maybe not quite fast enough to be production ready but it's fun to play with so far
+[see my code prokect article](https://www.codeproject.com/Articles/5258194/Lex-An-Optimizing-Compiler-for-Regular-Expressions)
+
+It includes a regex compiler, a bytecode assember, and bytecode disassembler as well as the pike virtual machine used for running the thing
+
+It's maybe as fast as it's going to get in C#
 
 # Lexly
 
-Lexly is a lexer generator based on Lex. The engine is Lex, with the same caveats on performance
+Lexly is a lexer generator based on Lex. The engine is Lex, with the same caveats on performance. The lexer spec is the same as rolex with a small addition in that you can specify assembly language (for the pike VM) inside of it (and regular expressions inside of *that*)
+
+```
+id {
+   regex ([A-Z_a-z])
+   regex ([0-9A-Z_a-z]*)
+}
+int= '0|\-?[1-9][0-9]*'
+space= '[ \t\n\v\f\r]'
+```
+Doing this asm in the id rule is slower than using pure non-lazy regular expressions because it misses out on the opportunity to create an execution graph from it and therefore optimize it. However, you do have access to all of the assembly instructions in there so you can do things the pure regex can't, like return varying match symbol ids. 
 
 # Rolex
 
