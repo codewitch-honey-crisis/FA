@@ -14,7 +14,7 @@ namespace RolexDemo {
     using System.Collections.Generic;
     using System.Text;
     
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("Rolex", "0.5.0.0")]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("Rolex", "0.6.0.0")]
     internal struct Token {
         public int Line;
         public int Column;
@@ -23,7 +23,7 @@ namespace RolexDemo {
         public string Value;
         public Token[] Skipped;
     }
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("Rolex", "0.5.0.0")]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("Rolex", "0.6.0.0")]
     internal struct DfaEntry {
         public DfaTransitionEntry[] Transitions;
         public int AcceptSymbolId;
@@ -32,7 +32,7 @@ namespace RolexDemo {
             this.AcceptSymbolId = acceptSymbolId;
         }
     }
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("Rolex", "0.5.0.0")]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("Rolex", "0.6.0.0")]
     internal struct DfaTransitionEntry {
         public int[] PackedRanges;
         public int Destination;
@@ -41,7 +41,7 @@ namespace RolexDemo {
             this.Destination = destination;
         }
     }
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("Rolex", "0.5.0.0")]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("Rolex", "0.6.0.0")]
     internal class TableTokenizer : object, IEnumerable<Token> {
         public const int ErrorSymbol = -1;
         private DfaEntry[] _dfaTable;
@@ -73,7 +73,7 @@ namespace RolexDemo {
             this._input = input;
         }
     }
-    [System.CodeDom.Compiler.GeneratedCodeAttribute("Rolex", "0.5.0.0")]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("Rolex", "0.6.0.0")]
     internal class TableTokenizerEnumerator : object, IEnumerator<Token> {
         public const int ErrorSymbol = -1;
         private const int _EosSymbol = -2;
