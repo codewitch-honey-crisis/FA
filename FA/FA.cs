@@ -869,8 +869,7 @@ namespace F
 								if (targets.Contains(e))
 									e = replacement;
 								if (!s.EpsilonTransitions.Contains(e))
-									s.EpsilonTransitions.Add(e);
-								
+									s.EpsilonTransitions.Add(e);		
 							}
 						}
 					}
@@ -900,8 +899,18 @@ namespace F
 		private sealed class _SetComparer :
 			IEqualityComparer<IList<FA>>,
 			IEqualityComparer<ICollection<FA>>,
+			IEqualityComparer<ISet<FA>>,
 			IEqualityComparer<IDictionary<KeyValuePair<int,int>, FA>>
 		{
+			// unordered comparison
+			public bool Equals(ISet<FA> lhs, ISet<FA> rhs)
+			{
+				if (ReferenceEquals(lhs, rhs))
+					return true;
+				else if (ReferenceEquals(null, lhs) || ReferenceEquals(null, rhs))
+					return false;
+				return lhs.SetEquals(rhs);
+			}
 			// unordered comparison
 			public bool Equals(IList<FA> lhs, IList<FA> rhs)
 			{
@@ -995,6 +1004,14 @@ namespace F
 					if (null != fa)
 						result ^= fa.GetHashCode();
 				}
+				return result;
+			}
+			public int GetHashCode(ISet<FA> lhs)
+			{
+				var result = 0;
+				foreach (var fa in lhs)
+					if (null != fa)
+						result ^= fa.GetHashCode();
 				return result;
 			}
 			public int GetHashCode(ICollection<FA> lhs)

@@ -50,7 +50,7 @@ namespace F
         {
             return _Determinize(this,progress);
         }
-        public static FA _Determinize(FA fa, IProgress<FAProgress> progress = null)
+        static FA _Determinize(FA fa, IProgress<FAProgress> progress = null)
         {
             if (null != progress)
                 progress.Report(new FAProgress(FAStatus.DfaTransform, 0));
@@ -77,10 +77,11 @@ namespace F
             
             var comparer = _SetComparer.Default;
 
-            var sets = new Dictionary<ICollection<FA>, ICollection<FA>>(comparer);
-            var working = new Queue<ICollection<FA>>();
-            var dfaMap = new Dictionary<ICollection<FA>, FA>(comparer);
-            var initial = fa.FillEpsilonClosure();
+            var sets = new Dictionary<HashSet<FA>, HashSet<FA>>(comparer);
+            var working = new Queue<HashSet<FA>>();
+            var dfaMap = new Dictionary<HashSet<FA>, FA>(comparer);
+            var initial = new HashSet<FA>(); 
+            fa.FillEpsilonClosure(initial); 
             sets.Add(initial, initial);
             working.Enqueue(initial);
             var result = new FA();
@@ -97,7 +98,7 @@ namespace F
             var j = 1;
             while (working.Count > 0)
             {
-                ICollection<FA> s = working.Dequeue();
+                var s = working.Dequeue();
                 var ecs = FillEpsilonClosure(s);
                 FA dfa;
                 dfaMap.TryGetValue(s, out dfa);
@@ -121,7 +122,7 @@ namespace F
                             if (trns.Key.Key <= points[i] && points[i] <= trns.Key.Value)
                             {
                                 foreach (var efa in trns.Value.FillEpsilonClosure())
-                                    set.Add(trns.Value);
+                                    set.Add(efa);
                             }
                         }
                     }

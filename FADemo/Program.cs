@@ -54,8 +54,9 @@ namespace FADemo
 			text = "\"base foo \\\"bar\\\" foobar  bar 123 baz -345 fubar 1foo *#( 0\"";
 			Console.Write("Lex NFA " + text + ": ");
 			var sb = new StringBuilder();
+			bool more;
 			// lex NFA
-			Console.WriteLine(nfa.Lex(UnicodeUtility.ToUtf32(text).GetEnumerator(), sb));
+			Console.WriteLine(nfa.Lex(UnicodeUtility.ToUtf32(text).GetEnumerator(), sb,out more));
 			
 			
 			// build a simple symbol table so our ids match our NFA
@@ -64,7 +65,7 @@ namespace FADemo
 				symids[i] = i;
 			var dfaTable = dfa.ToDfaStateTable(symids);
 			Console.Write("Lex DFA " + text + ": ");
-			Console.WriteLine(FA.Lex(dfaTable,UnicodeUtility.ToUtf32(text).GetEnumerator(), sb));
+			Console.WriteLine(FA.Lex(dfaTable,UnicodeUtility.ToUtf32(text).GetEnumerator(), sb,out more));
 			var tokenizer = new Tokenizer(dfa, text);
 			foreach (var token in tokenizer)
 				Console.WriteLine("{0}: {1}", token.SymbolId, token.Value);

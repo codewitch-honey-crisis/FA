@@ -127,7 +127,7 @@ namespace LexDemo
 		}
 		static void _Perf(int[][] prog,string test)
 		{
-			var sw = DateTimeUtility.HasPrecisionTime?null:new Stopwatch();
+			var sw = DateTimeUtility.HasPreciseTime?null:new Stopwatch();
 			DateTime utcStart;
 			DateTime utcEnd;
 			TimeSpan elapsed=TimeSpan.Zero;
@@ -141,7 +141,7 @@ namespace LexDemo
 				while (LexContext.EndOfInput != lc.Current)
 				{
 					lc.ClearCapture();
-					if (!DateTimeUtility.HasPrecisionTime)
+					if (!DateTimeUtility.HasPreciseTime)
 					{
 						sw.Start();
 						Lex.Run(prog, lc);
@@ -162,7 +162,7 @@ namespace LexDemo
 		static void _Perf(DfaEntry[] dfaTable, string test)
 		{
 			var t = F.UnicodeUtility.ToUtf32(test);
-			var sw = DateTimeUtility.HasPrecisionTime ? null : new Stopwatch();
+			var sw = DateTimeUtility.HasPreciseTime ? null : new Stopwatch();
 			DateTime utcStart;
 			DateTime utcEnd;
 			TimeSpan elapsed = TimeSpan.Zero;
@@ -178,7 +178,7 @@ namespace LexDemo
 				while (more)
 				{
 					sb.Clear();
-					if (!DateTimeUtility.HasPrecisionTime)
+					if (!DateTimeUtility.HasPreciseTime)
 					{
 						sw.Start();
 						FA.Lex(dfaTable,e,sb, out more);
@@ -200,7 +200,7 @@ namespace LexDemo
 		static void _Perf(FA nfa, string test)
 		{
 			var t = F.UnicodeUtility.ToUtf32(test);
-			var sw = DateTimeUtility.HasPrecisionTime ? null : new Stopwatch();
+			var sw = DateTimeUtility.HasPreciseTime ? null : new Stopwatch();
 			DateTime utcStart;
 			DateTime utcEnd;
 			TimeSpan elapsed = TimeSpan.Zero;
@@ -216,7 +216,7 @@ namespace LexDemo
 				while (more)
 				{
 					sb.Clear();
-					if (!DateTimeUtility.HasPrecisionTime)
+					if (!DateTimeUtility.HasPreciseTime)
 					{
 						sw.Start();
 						nfa.Lex(e, sb, out more);

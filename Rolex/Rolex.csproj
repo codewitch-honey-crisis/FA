@@ -46,10 +46,11 @@
     <Compile Include="CodeDomUtility.cs" />
     <Compile Include="CodeDomVisitor.cs" />
     <Compile Include="CodeGenerator.cs" />
+    <Compile Include="DfaEntry.cs" />
+    <Compile Include="FastFA.brick.cs" />
     <Compile Include="LexContext.brick.cs" />
-    <Compile Include="PrototypeTokenizer.cs" />
     <Compile Include="Token.cs" />
-    <Content Include="Export\PrototypeTokenizerTemplate.cs" />
+    <Compile Include="UnicodeUtility.cs" />
     <Content Include="Export\TableTokenizer.cs" />
     <Content Include="Export\TableTokenizerTemplate.cs" />
     <Content Include="Export\Token.cs" />
@@ -64,17 +65,11 @@
     <None Include="Key.snk" />
     <None Include="Slang.rl" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\FA\FA.csproj">
-      <Project>{b6c72046-0d75-425f-b791-6ced5aaaca56}</Project>
-      <Name>FA</Name>
-    </ProjectReference>
-  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PreBuildEvent>"$(SolutionDir)csbrick.exe" "$(SolutionDir)FA\FA.csproj" /output "$(ProjectDir)FA.brick.cs"
-"$(SolutionDir)csbrick.exe" "$(SolutionDir)LexContext\LexContext.csproj" /output "$(ProjectDir)LexContext.brick.cs"
-"$(SolutionDir)deslang.exe" "$(ProjectDir)Export\PrototypeTokenizerTemplate.cs" "$(ProjectDir)Export\TableTokenizer.cs" "$(ProjectDir)Export\TableTokenizerTemplate.cs" "$(ProjectDir)Export\Token.cs" /output "$(ProjectDir)Deslanged.cs" /namespace Rolex /ifstale</PreBuildEvent>
+    <PreBuildEvent>"$(SolutionDir)csbrick.exe" "$(SolutionDir)LexContext\LexContext.csproj" /output "$(ProjectDir)LexContext.brick.cs"
+"$(SolutionDir)csbrick.exe" "$(SolutionDir)FastFA\FastFA.csproj" /output "$(ProjectDir)FastFA.brick.cs"
+"$(SolutionDir)deslang.exe" "$(ProjectDir)Export\TableTokenizer.cs" "$(ProjectDir)Export\TableTokenizerTemplate.cs" "$(ProjectDir)Export\Token.cs" /output "$(ProjectDir)Deslanged.cs" /namespace Rolex /ifstale</PreBuildEvent>
   </PropertyGroup>
   <PropertyGroup>
     <PostBuildEvent>copy "$(TargetPath)" "$(SolutionDir)"</PostBuildEvent>

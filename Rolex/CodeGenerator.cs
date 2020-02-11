@@ -103,37 +103,7 @@ namespace Rolex
 			return result;
 		}
 
-		public static CodeExpression GenerateNfaTableInitializer(NfaEntry[] nfaTable)
-		{
-			var result = new CodeArrayCreateExpression("NfaEntry");
-			for (var i = 0; i < nfaTable.Length; i++)
-			{
-				var entry = new CodeObjectCreateExpression("NfaEntry");
-				var transitions = new CodeArrayCreateExpression("NfaTransitionEntry");
-				var ne = nfaTable[i];
-				var trns = ne.InputTransitions;
-				for (var j = 0; j < trns.Length; j++)
-				{
-					var transition = new CodeObjectCreateExpression(transitions.CreateType);
-					var ranges = new CodeArrayCreateExpression(typeof(int));
-					var trn = trns[j];
-					var rngs = trn.PackedRanges;
-					for (var k = 0; k < rngs.Length; k++)
-						ranges.Initializers.Add(new CodePrimitiveExpression(rngs[k]));
-					transition.Parameters.Add(ranges);
-					transition.Parameters.Add(new CodePrimitiveExpression(trn.Destination));
-					transitions.Initializers.Add(transition);
-				}
-				entry.Parameters.Add(new CodePrimitiveExpression(ne.AcceptSymbolId));
-				entry.Parameters.Add(transitions);
-				var etrns = new CodeArrayCreateExpression(typeof(int[]));
-				for(var j=0;j<ne.EpsilonTransitions.Length;j++)
-					etrns.Initializers.Add(new CodePrimitiveExpression(ne.EpsilonTransitions[j]));
-				entry.Parameters.Add(etrns);
-				result.Initializers.Add(entry);
-			}
-			return result;
-		}
+		
 		// generates an "NFA" table from a dfa state table, primarily for testing
 		public static CodeExpression GenerateNfaTableInitializer(DfaEntry[] dfaTable)
 		{

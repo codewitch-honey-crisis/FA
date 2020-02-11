@@ -1,17 +1,9 @@
-#define MINIMIZE
 using System;
 using System.Collections.Generic;
-using System.Reflection;
 using System.Text;
-using System.ComponentModel;
-using System.ComponentModel.Design.Serialization;
-using System.Globalization;
-using System.Collections;
+using LC;
 using System.Diagnostics;
 using System.IO;
-using LC;
-using System.Linq;
-using System.Threading.Tasks;
 namespace F{public partial class CharacterClasses{public static int[][]UnicodeCategories=new int[][]{new int[]{65,90,192,214,216,222,256,256,258,258,260,
 260,262,262,264,264,266,266,268,268,270,270,272,272,274,274,276,276,278,278,280,280,282,282,284,284,286,286,288,288,290,290,292,292,294,294,296,296,298,
 298,300,300,302,302,304,304,306,306,308,308,310,310,313,313,315,315,317,317,319,319,321,321,323,323,325,325,327,327,330,330,332,332,334,334,336,336,338,
@@ -799,238 +791,204 @@ public static int[]word=new int[]{65,90,97,122,170,170,181,181,186,186,192,214,2
 xdigit=new int[]{48,48,57,57,65,65,70,70,97,97,102,102};}}namespace F{partial class CharacterClasses{static Lazy<IDictionary<string,int[]>>_Known=new Lazy<IDictionary<string,
 int[]>>(_GetKnown);static IDictionary<string,int[]>_GetKnown(){var result=new Dictionary<string,int[]>();var fa=typeof(CharacterClasses).GetFields();for
 (var i=0;i<fa.Length;i++){var f=fa[i];if(f.FieldType==typeof(int[])){result.Add(f.Name,(int[])f.GetValue(null));}}return result;}public static IDictionary<string,int[]>
-Known{get{return _Known.Value;}}}}namespace F{/// <summary>
-/// This is an internal class that helps the code serializer know how to serialize DFA entries
-/// </summary>
-class DfaEntryConverter:TypeConverter{ public override bool CanConvertTo(ITypeDescriptorContext context,Type destinationType){if(typeof(InstanceDescriptor)
-==destinationType)return true;return base.CanConvertTo(context,destinationType);} public override object ConvertTo(ITypeDescriptorContext context,CultureInfo
- culture,object value,Type destinationType){if(typeof(InstanceDescriptor)==destinationType){ var dte=(DfaEntry)value;return new InstanceDescriptor(typeof(DfaEntry).GetConstructor(new
- Type[]{typeof(int),typeof(DfaTransitionEntry[])}),new object[]{dte.AcceptSymbolId,dte.Transitions});}return base.ConvertTo(context,culture,value,destinationType);
-}}/// <summary>
-/// Represents an entry in a DFA state table
-/// </summary>
-[TypeConverter(typeof(DfaEntryConverter))]
-#if FALIB
+Known{get{return _Known.Value;}}}}namespace F{
+#if FFALIB
 public
 #endif
-struct DfaEntry{/// <summary>
-/// Constructs a new instance of the DFA state table with the specified parameters
-/// </summary>
-/// <param name="acceptSymbolId">The symbolId to accept or -1 for non-accepting</param>
-/// <param name="transitions">The transition entries</param>
-public DfaEntry(int acceptSymbolId,DfaTransitionEntry[]transitions){AcceptSymbolId=acceptSymbolId;Transitions=transitions;}/// <summary>
-/// Indicates the accept symbol's id or -1 for non-accepting
-/// </summary>
-public int AcceptSymbolId;/// <summary>
-/// Indicates the transition entries
-/// </summary>
-public DfaTransitionEntry[]Transitions;}/// <summary>
-/// This is an internal class that helps the code serializer serialize a DfaTransitionEntry
-/// </summary>
-class DfaTransitionEntryConverter:TypeConverter{ public override bool CanConvertTo(ITypeDescriptorContext context,Type destinationType){if(typeof(InstanceDescriptor)
-==destinationType)return true;return base.CanConvertTo(context,destinationType);} public override object ConvertTo(ITypeDescriptorContext context,CultureInfo
- culture,object value,Type destinationType){if(typeof(InstanceDescriptor)==destinationType){var dte=(DfaTransitionEntry)value;return new InstanceDescriptor(typeof(DfaTransitionEntry).GetConstructor(new
- Type[]{typeof(int[]),typeof(int)}),new object[]{dte.PackedRanges,dte.Destination});}return base.ConvertTo(context,culture,value,destinationType);}}/// <summary>
-/// Indicates a transition entry in the DFA state table
-/// </summary>
-[TypeConverter(typeof(DfaTransitionEntryConverter))]public struct DfaTransitionEntry{/// <summary>
-/// Constructs a DFA transition entry with the specified parameters
-/// </summary>
-/// <param name="transitions">Packed character range pairs as a flat array</param>
-/// <param name="destination">The destination state id</param>
-public DfaTransitionEntry(int[]transitions,int destination){PackedRanges=transitions;Destination=destination;}/// <summary>
-/// Indicates the packed range characters. Each range is specified by two array entries, first and last in that order.
-/// </summary>
-public int[]PackedRanges;/// <summary>
-/// Indicates the destination state id
-/// </summary>
-public int Destination;}}namespace F{
-#if FALIB
+partial struct FFATransition{public int Min;public int Max;public FFA To;public FFATransition(int min,int max,FFA to){Min=min;Max=max;To=to;}}
+#if FFALIB
 public
 #endif
-sealed partial class FA{public readonly Dictionary<KeyValuePair<int,int>,FA>InputTransitions=new Dictionary<KeyValuePair<int,int>,FA>();public readonly
- HashSet<FA>EpsilonTransitions=new HashSet<FA>();public int AcceptSymbol=-1;public bool IsAccepting=false;public FA(bool isAccepting,int acceptSymbol=-1)
-{IsAccepting=isAccepting;AcceptSymbol=acceptSymbol;}public FA():this(false){}/// <summary>
-/// Moves from the specified state to a destination state in a DFA by moving along the specified input.
-/// </summary>
-/// <param name="dfaTable">The DFA state table to use</param>
-/// <param name="state">The current state id</param>
-/// <param name="input">The input to move on</param>
-/// <returns>The state id which the machine moved to or -1 if no state could be found.</returns>
-public static int Move(DfaEntry[]dfaTable,int state,int input){ for(var i=0;i<dfaTable[state].Transitions.Length;i++){var entry=dfaTable[state].Transitions[i];
-var found=false; for(var j=0;j<entry.PackedRanges.Length;j++){var first=entry.PackedRanges[j];++j;var last=entry.PackedRanges[j];if(input>last)continue;
-if(first>input)break;found=true;break;}if(found){ return entry.Destination;}}return-1;}/// <summary>
-/// Returns a DFA table that can be used to lex or match
-/// </summary>
-/// <param name="symbolTable">The symbol table to use, or null to just implicitly tag symbols with integer ids</param>
-/// <returns>A DFA table that can be used to efficiently match or lex input</returns>
-public DfaEntry[]ToDfaStateTable(IList<int>symbolTable=null,IProgress<FAProgress>progress=null){ FA dfa=null;if(!IsDfa){dfa=ToDfa(progress);dfa.TrimDuplicates(progress);
-}else dfa=this;var closure=new List<FA>();dfa.FillClosure(closure);var symbolLookup=new Dictionary<int,int>(); if(null==symbolTable){ var i=0;for(int jc
-=closure.Count,j=0;j<jc;++j){var fa=closure[j];if(fa.IsAccepting&&!symbolLookup.ContainsKey(fa.AcceptSymbol)){if(0>fa.AcceptSymbol)throw new InvalidOperationException("An accept symbol was never specified for state q"
-+jc.ToString());symbolLookup.Add(fa.AcceptSymbol,i);++i;}}}else for(int ic=symbolTable.Count,i=0;i<ic;++i){symbolLookup.Add(symbolTable[i],i);} var result
-=new DfaEntry[closure.Count];for(var i=0;i<result.Length;i++){var fa=closure[i];
-#if DEBUG
-if(fa.IsAccepting)System.Diagnostics.Debug.Assert(-1<fa.AcceptSymbol,"Illegal accept symbol "+fa.AcceptSymbol.ToString()+" was found on state state q"
-+i.ToString());
-#endif
- var trgs=fa.FillInputTransitionRangesGroupedByState(); var trns=new DfaTransitionEntry[trgs.Count];var j=0; foreach(var trg in trgs){ trns[j]=new DfaTransitionEntry(
-trg.Value,closure.IndexOf(trg.Key));++j;}
-#if DEBUG
-if(fa.IsAccepting&&!symbolLookup.ContainsKey(fa.AcceptSymbol)){try{dfa.RenderToFile(@"dfastatetable_crashdump_dfa.jpg");}catch{}System.Diagnostics.Debug.Assert(false,
-"The symbol table did not contain an entry for state q"+i.ToString());}
-#endif
-result[i]=new DfaEntry(fa.IsAccepting?symbolLookup[fa.AcceptSymbol]:-1,trns);}return result;}public IDictionary<FA,int[]>FillInputTransitionRangesGroupedByState(IDictionary<FA,int[]>
-result=null){var working=new Dictionary<FA,List<KeyValuePair<int,int>>>();foreach(var trns in InputTransitions){List<KeyValuePair<int,int>>l;if(!working.TryGetValue(trns.Value,out
- l)){l=new List<KeyValuePair<int,int>>();working.Add(trns.Value,l);}l.Add(trns.Key);}if(null==result)result=new Dictionary<FA,int[]>();foreach(var item
- in working){item.Value.Sort((x,y)=>{var c=x.Key.CompareTo(y.Key);if(0!=c)return c;return x.Value.CompareTo(y.Value);});RangeUtility.NormalizeSortedRangeList(item.Value);
-result.Add(item.Key,RangeUtility.FromPairs(item.Value));}return result;}static bool _TryForwardNeutral(FA fa,out FA result){if(!fa.IsNeutral){result=fa;
-return false;}result=fa;foreach(var efa in fa.EpsilonTransitions){result=efa;break;}return fa!=result;}static FA _ForwardNeutrals(FA fa){if(null==fa)throw
- new ArgumentNullException(nameof(fa));var result=fa;while(_TryForwardNeutral(result,out result));return result;}/// <summary>
-/// Converts the state machine to a Generalized NFA
-/// </summary>
-/// <param name="accept">The accept symbol</param>
-/// <returns>A new GNFA state machine that accepts the same language</returns>
-/// <remarks>A generalized NFA has a single start state and a single accept state that is final.</remarks>
-public FA ToGnfa(int accept=-1){var fa=Clone();var accepting=fa.FillAcceptingStates();if(1<accepting.Count){var newFinal=new FA(true,accept);foreach(var
- afa in accepting){afa.IsAccepting=false;afa.EpsilonTransitions.Add(newFinal);}}else{foreach(var afa in accepting){afa.AcceptSymbol=accept;}} var last
-=fa.FirstAcceptingState;if(!last.IsFinal){ last.IsAccepting=false;last.EpsilonTransitions.Add(new FA(true,accept));}if(!fa.IsNeutral){ var nfa=new FA();
-nfa.EpsilonTransitions.Add(fa);fa=nfa;}return fa;}/// <summary>
-/// Builds a simple lexer using the specified FA expressions
-/// </summary>
-/// <param name="expressions">The FSMs/expressions to compose the lexer from</param>
-/// <returns>An FSM suitable for lexing</returns>
-public static FA ToLexer(IEnumerable<FA>expressions){var result=new FA();foreach(var expr in expressions)result.EpsilonTransitions.Add(expr);return result;
-}/// <summary>
-/// 
-/// </summary>
-/// <returns></returns>
-public ICollection<FA>FillAcceptingStates(ICollection<FA>result=null){if(null==result)result=new HashSet<FA>();var closure=FillClosure();foreach(var fa
- in closure)if(fa.IsAccepting)result.Add(fa);return result;}public bool IsFinal{get{return 0==InputTransitions.Count&&0==EpsilonTransitions.Count;}}public
- bool IsNeutral{get{return!IsAccepting&&0==InputTransitions.Count&&1==EpsilonTransitions.Count;}}public void TrimNeutrals(){var cl=new List<FA>();FillClosure(cl);
-foreach(var s in cl){var td=new List<KeyValuePair<KeyValuePair<int,int>,FA>>(s.InputTransitions.Count);foreach(var trns in s.InputTransitions){var fa2
-=_ForwardNeutrals(trns.Value);if(null==fa2)throw new InvalidProgramException("null in forward neutrals support code");td.Add(new KeyValuePair<KeyValuePair<int,
-int>,FA>(trns.Key,fa2));}s.InputTransitions.Clear();foreach(var trns in td){s.InputTransitions.Add(trns.Key,trns.Value);}var el=new List<FA>(s.EpsilonTransitions.Count);
-foreach(var fa in s.EpsilonTransitions){var fa2=_ForwardNeutrals(fa);if(null==fa2)throw new InvalidProgramException("null in forward neutrals support code");
-el.Add(fa2);}var ec=el.Count;s.EpsilonTransitions.Clear();for(int j=0;j<ec;++j){s.EpsilonTransitions.Add(el[j]);}}}public FA FirstAcceptingState{get{foreach(var
- fa in FillClosure()){if(fa.IsAccepting)return fa;}return null;}}public void AddInputTransition(KeyValuePair<int,int>range,FA dst){foreach(var trns in
- InputTransitions){if(RangeUtility.Intersects(trns.Key,range))throw new ArgumentException("There already is a transition to a different state on at least part of the specified input range");
-}InputTransitions.Add(range,dst);}public ICollection<FA>FillClosure(ICollection<FA>result=null){if(null==result)result=new HashSet<FA>();if(result.Contains(this))
-return result;result.Add(this);foreach(var trns in InputTransitions)trns.Value.FillClosure(result);foreach(var fa in EpsilonTransitions)fa.FillClosure(result);
-return result;}public ICollection<FA>FillEpsilonClosure(ICollection<FA>result=null){if(null==result)result=new HashSet<FA>();if(result.Contains(this))
-return result;result.Add(this);foreach(var fa in EpsilonTransitions)fa.FillEpsilonClosure(result);return result;}public static ICollection<FA>FillEpsilonClosure(IEnumerable<FA>
-states,ICollection<FA>result=null){if(null==result)result=new HashSet<FA>();foreach(var fa in states)fa.FillEpsilonClosure(result);return result;}public
- FA Clone(){var closure=new List<FA>();FillClosure(closure);var nclosure=new FA[closure.Count];for(var i=0;i<nclosure.Length;i++){var fa=closure[i];nclosure[i]
-=new FA(fa.IsAccepting,fa.AcceptSymbol);}for(var i=0;i<nclosure.Length;i++){var fa=closure[i];var nfa=nclosure[i];foreach(var trns in fa.InputTransitions)
-{nfa.InputTransitions.Add(trns.Key,nclosure[closure.IndexOf(trns.Value)]);}foreach(var efa in fa.EpsilonTransitions){nfa.EpsilonTransitions.Add(nclosure[closure.IndexOf(efa)]);
-}}return nclosure[0];}/// <summary>
-/// Returns a duplicate state machine, except one that only goes from this state to the state specified in <paramref name="to"/>. Any state that does not lead to that state is eliminated from the resulting graph.
-/// </summary>
-/// <param name="to">The state to track the path to</param>
-/// <returns>A new state machine that only goes from this state to the state indicated by <paramref name="to"/></returns>
-public FA ClonePathTo(FA to){var closure=new List<FA>();FillClosure(closure);var nclosure=new FA[closure.Count];for(var i=0;i<nclosure.Length;i++){nclosure[i]
-=new FA(closure[i].IsAccepting,closure[i].AcceptSymbol);}for(var i=0;i<nclosure.Length;i++){var t=nclosure[i].InputTransitions;var e=nclosure[i].EpsilonTransitions;
-foreach(var trns in closure[i].InputTransitions){if(trns.Value.FillClosure().Contains(to)){var id=closure.IndexOf(trns.Value);t.Add(trns.Key,nclosure[id]);
-}}foreach(var trns in closure[i].EpsilonTransitions){if(trns.FillClosure().Contains(to)){var id=closure.IndexOf(trns);e.Add(nclosure[id]);}}}return nclosure[0];
-}/// <summary>
-/// Returns a duplicate state machine, except one that only goes from this state to any state specified in <paramref name="to"/>. Any state that does not lead to one of those states is eliminated from the resulting graph.
-/// </summary>
-/// <param name="to">The collection of destination states</param>
-/// <returns>A new state machine that only goes from this state to the states indicated by <paramref name="to"/></returns>
-public FA ClonePathToAny(IEnumerable<FA>to){var closure=new List<FA>();FillClosure(closure);var nclosure=new FA[closure.Count];for(var i=0;i<nclosure.Length;
-i++){nclosure[i]=new FA(closure[i].IsAccepting,closure[i].AcceptSymbol);}for(var i=0;i<nclosure.Length;i++){var t=nclosure[i].InputTransitions;var e=nclosure[i].EpsilonTransitions;
-foreach(var trns in closure[i].InputTransitions){if(_ContainsAny(trns.Value.FillClosure(),to)){var id=closure.IndexOf(trns.Value);t.Add(trns.Key,nclosure[id]);
-}}foreach(var trns in closure[i].EpsilonTransitions){if(_ContainsAny(trns.FillClosure(),to)){var id=closure.IndexOf(trns);e.Add(nclosure[id]);}}}return
- nclosure[0];}static bool _ContainsAny(ICollection<FA>col,IEnumerable<FA>any){foreach(var fa in any)if(col.Contains(fa))return true;return false;}public
- static FA Literal(IEnumerable<int>@string,int accept=-1){var result=new FA();var current=result;foreach(var ch in@string){current.IsAccepting=false;var
- fa=new FA(true,accept);current.AddInputTransition(new KeyValuePair<int,int>(ch,ch),fa);current=fa;}return result;}public static FA Concat(IEnumerable<FA>
-exprs,int accept=-1){FA result=null,left=null,right=null;foreach(var val in exprs){if(null==val)continue; var nval=val.Clone(); if(null==left){if(null
-==result)result=nval;left=nval; continue;}if(null==right){right=nval;} nval=right.Clone();_Concat(left,nval);right=null;left=nval;}if(null!=right){right.FirstAcceptingState.AcceptSymbol
-=accept;}else{result.FirstAcceptingState.AcceptSymbol=accept;}return result;}static void _Concat(FA lhs,FA rhs){ var f=lhs.FirstAcceptingState; f.IsAccepting
-=false;f.EpsilonTransitions.Add(rhs);}public static FA Set(int[]ranges,int accept=-1){var result=new FA();var final=new FA(true,accept);var pairs=new List<KeyValuePair<int,
-int>>(RangeUtility.ToPairs(ranges));pairs.Sort((x,y)=>{return x.Key.CompareTo(y.Key);});RangeUtility.NormalizeSortedRangeList(pairs);foreach(var pair in
- pairs)result.AddInputTransition(pair,final);return result;}public static FA Or(IEnumerable<FA>exprs,int accept=-1){var result=new FA();var final=new FA(true,
-accept);foreach(var fa in exprs){if(null!=fa){var nfa=fa.Clone();result.EpsilonTransitions.Add(nfa);var nffa=nfa.FirstAcceptingState;nffa.IsAccepting=
-false;nffa.EpsilonTransitions.Add(final);}else if(!result.EpsilonTransitions.Contains(final))result.EpsilonTransitions.Add(final);}return result;}public
- static FA Repeat(FA expr,int minOccurs=-1,int maxOccurs=-1,int accept=-1){expr=expr.Clone();if(minOccurs>0&&maxOccurs>0&&minOccurs>maxOccurs)throw new
- ArgumentOutOfRangeException(nameof(maxOccurs));FA result;switch(minOccurs){case-1:case 0:switch(maxOccurs){case-1:case 0: result=new FA();var final=new
- FA(true,accept);final.EpsilonTransitions.Add(result);foreach(var afa in expr.FillAcceptingStates()){afa.IsAccepting=false;afa.EpsilonTransitions.Add(final);
-}result.EpsilonTransitions.Add(expr);result.EpsilonTransitions.Add(final); return result;case 1:result=Optional(expr,accept); return result;default:var
- l=new List<FA>();expr=Optional(expr);l.Add(expr);for(int i=1;i<maxOccurs;++i){l.Add(expr.Clone());}result=Concat(l,accept); return result;}case 1:switch
-(maxOccurs){case-1:case 0:result=new FA();var final=new FA(true,accept);final.EpsilonTransitions.Add(result);foreach(var afa in expr.FillAcceptingStates())
-{afa.IsAccepting=false;afa.EpsilonTransitions.Add(final);}result.EpsilonTransitions.Add(expr); return result;case 1: return expr;default:result=Concat(new
- FA[]{expr,Repeat(expr.Clone(),0,maxOccurs-1)},accept); return result;}default:switch(maxOccurs){case-1:case 0:result=Concat(new FA[]{Repeat(expr,minOccurs,
-minOccurs,accept),Repeat(expr,0,0,accept)},accept); return result;case 1:throw new ArgumentOutOfRangeException(nameof(maxOccurs));default:if(minOccurs
-==maxOccurs){var l=new List<FA>();l.Add(expr); for(int i=1;i<minOccurs;++i){var e=expr.Clone(); l.Add(e);}result=Concat(l,accept); return result;}result
-=Concat(new FA[]{Repeat(expr.Clone(),minOccurs,minOccurs,accept),Repeat(Optional(expr.Clone()),maxOccurs-minOccurs,maxOccurs-minOccurs,accept)},accept);
- return result;}} throw new NotImplementedException();}public static FA Optional(FA expr,int accept=-1){var result=expr.Clone();var f=result.FirstAcceptingState;
-f.AcceptSymbol=accept;result.EpsilonTransitions.Add(f);return result;}public static FA CaseInsensitive(FA expr,int accept=-1){var result=expr.Clone();
-var closure=new List<FA>();result.FillClosure(closure);for(int ic=closure.Count,i=0;i<ic;++i){var fa=closure[i];var t=new List<KeyValuePair<KeyValuePair<int,
-int>,FA>>(fa.InputTransitions);fa.InputTransitions.Clear();foreach(var trns in t){var f=char.ConvertFromUtf32(trns.Key.Key);var l=char.ConvertFromUtf32(trns.Key.Value);
-if(char.IsLower(f,0)){if(!char.IsLower(l,0))throw new NotSupportedException("Attempt to make an invalid range case insensitive");fa.InputTransitions.Add(trns.Key,
-trns.Value);f=f.ToUpperInvariant();l=l.ToUpperInvariant();fa.InputTransitions.Add(new KeyValuePair<int,int>(char.ConvertToUtf32(f,0),char.ConvertToUtf32(l,0)),
-trns.Value);}else if(char.IsUpper(f,0)){if(!char.IsUpper(l,0))throw new NotSupportedException("Attempt to make an invalid range case insensitive");fa.InputTransitions.Add(trns.Key,
-trns.Value);f=f.ToLowerInvariant();l=l.ToLowerInvariant();fa.InputTransitions.Add(new KeyValuePair<int,int>(char.ConvertToUtf32(f,0),char.ConvertToUtf32(l,
-0)),trns.Value);}else{fa.InputTransitions.Add(trns.Key,trns.Value);}}}return result;}/// <summary>
-/// Indicates whether or not this state machine is a DFA
-/// </summary>
-public bool IsDfa{get{ foreach(var fa in FillClosure())if(0!=fa.EpsilonTransitions.Count)return false;return true;}}/// <summary>
-/// Fills a collection with the result of moving each of the specified <paramref name="states"/> on the specified input.
-/// </summary>
-/// <param name="states">The states to examine</param>
-/// <param name="input">The input to use</param>
-/// <param name="result">The states that are now entered as a result of the move</param>
-/// <returns><paramref name="result"/> or a new collection if it wasn't specified.</returns>
-public static ICollection<FA>FillMove(IEnumerable<FA>states,int input,ICollection<FA>result=null){var inputs=new KeyValuePair<int,int>(input,input);if
-(null==result)result=new List<FA>();foreach(var fa in states){ foreach(var efa in fa.FillEpsilonClosure()){ foreach(var trns in efa.InputTransitions)if(RangeUtility.Intersects(trns.Key,inputs))
-if(!result.Contains(trns.Value))foreach(var ofa in trns.Value.FillEpsilonClosure())if(!result.Contains(ofa)) result.Add(ofa);}}return result;}/// <summary>
-/// Indicates whether this state is a duplicate of another state.
-/// </summary>
-/// <param name="rhs">The state to compare with</param>
-/// <returns>True if the states are duplicates (one can be removed without changing the language of the machine)</returns>
-public bool IsDuplicate(FA rhs){if(null!=rhs&&IsAccepting==rhs.IsAccepting&&_SetComparer.Default.Equals(EpsilonTransitions,rhs.EpsilonTransitions)&&_SetComparer.Default.Equals(InputTransitions,
-rhs.InputTransitions)){if(!IsAccepting||AcceptSymbol==rhs.AcceptSymbol)return true;}return false;}/// <summary>
-/// Fills a dictionary of duplicates by state for any duplicates found in the state graph
-/// </summary>
-/// <param name="result">The resulting dictionary to be filled.</param>
-/// <returns>The resulting dictionary of duplicates</returns>
-public IDictionary<FA,ICollection<FA>>FillDuplicatesGroupedByState(IDictionary<FA,ICollection<FA>>result=null){if(null==result)result=new Dictionary<FA,
-ICollection<FA>>();var closure=new List<FA>();FillClosure(closure);var cl=closure;int c=cl.Count;for(int i=0;i<c;i++){var s=cl[i];for(int j=i+1;j<c;j++)
-{var cmp=cl[j];if(s.IsDuplicate(cmp)){ICollection<FA>col=new List<FA>();if(!result.ContainsKey(s))result.Add(s,col);else col=result[s];if(!col.Contains(cmp))
-col.Add(cmp);}}}return result;}/// <summary>
-/// Trims duplicate states from the graph
-/// </summary>
-public void TrimDuplicates(IProgress<FAProgress>progress=null){var closure=new List<FA>();FillClosure(closure);var lclosure=closure;var dups=new Dictionary<FA,
-ICollection<FA>>();int oc=0;int c=-1;var k=0; while(c<oc){c=lclosure.Count;lclosure[0].FillDuplicatesGroupedByState(dups);if(0<dups.Count){if(null!=progress)
-{progress.Report(new FAProgress(FAStatus.TrimDuplicates,k));} foreach(KeyValuePair<FA,ICollection<FA>>de in dups){var replacement=de.Key;var targets=de.Value;
-for(int i=0;i<c;++i){var s=lclosure[i];var repls=new List<KeyValuePair<FA,FA>>();var td=new List<KeyValuePair<KeyValuePair<int,int>,FA>>(s.InputTransitions);
-s.InputTransitions.Clear();foreach(var trns in td){if(targets.Contains(trns.Value)){s.InputTransitions.Add(trns.Key,replacement);}else s.InputTransitions.Add(trns.Key,
-trns.Value);}int lc=s.EpsilonTransitions.Count;var epsl=new List<FA>(s.EpsilonTransitions);s.EpsilonTransitions.Clear();for(int j=0;j<lc;++j){var e=epsl[j];
-if(targets.Contains(e))e=replacement;if(!s.EpsilonTransitions.Contains(e))s.EpsilonTransitions.Add(e);}}}dups.Clear();++k;}else{++k;break;}oc=c;var f=
-lclosure[0];lclosure=new List<FA>();f.FillClosure(lclosure);c=lclosure.Count;}}
-#region _SetComparer
- private sealed class _SetComparer:IEqualityComparer<IList<FA>>,IEqualityComparer<ICollection<FA>>,IEqualityComparer<IDictionary<KeyValuePair<int,int>,
-FA>>{ public bool Equals(IList<FA>lhs,IList<FA>rhs){if(ReferenceEquals(lhs,rhs))return true;else if(ReferenceEquals(null,lhs)||ReferenceEquals(null,rhs))
-return false;if(lhs.Count!=rhs.Count)return false;using(var xe=lhs.GetEnumerator())using(var ye=rhs.GetEnumerator())while(xe.MoveNext()&&ye.MoveNext())
-if(!rhs.Contains(xe.Current)||!lhs.Contains(ye.Current))return false;return true;} public bool Equals(ICollection<FA>lhs,ICollection<FA>rhs){if(ReferenceEquals(lhs,
-rhs))return true;else if(ReferenceEquals(null,lhs)||ReferenceEquals(null,rhs))return false;if(lhs.Count!=rhs.Count)return false;using(var xe=lhs.GetEnumerator())
-using(var ye=rhs.GetEnumerator())while(xe.MoveNext()&&ye.MoveNext())if(!rhs.Contains(xe.Current)||!lhs.Contains(ye.Current))return false;return true;}
-public bool Equals(IDictionary<KeyValuePair<int,int>,FA>lhs,IDictionary<KeyValuePair<int,int>,FA>rhs){if(ReferenceEquals(lhs,rhs))return true;else if(ReferenceEquals(null,
-lhs)||ReferenceEquals(null,rhs))return false;if(lhs.Count!=rhs.Count)return false;using(var xe=lhs.GetEnumerator())using(var ye=rhs.GetEnumerator())while
-(xe.MoveNext()&&ye.MoveNext())if(!rhs.Contains(xe.Current)||!lhs.Contains(ye.Current))return false;return true;}public bool Equals(IDictionary<FA,ICollection<KeyValuePair<int,int>>>
-lhs,IDictionary<FA,ICollection<KeyValuePair<int,int>>>rhs){if(ReferenceEquals(lhs,rhs))return true;else if(ReferenceEquals(null,lhs)||ReferenceEquals(null,
-rhs))return false;if(lhs.Count!=rhs.Count)return false;foreach(var trns in lhs){ICollection<KeyValuePair<int,int>>col;if(!rhs.TryGetValue(trns.Key,out
- col))return false;using(var xe=trns.Value.GetEnumerator())using(var ye=col.GetEnumerator())while(xe.MoveNext()&&ye.MoveNext())if(!col.Contains(xe.Current)
-||!trns.Value.Contains(ye.Current))return false;}return true;}public static bool _EqualsInput(ICollection<KeyValuePair<int,int>>lhs,ICollection<KeyValuePair<int,int>>
-rhs){if(ReferenceEquals(lhs,rhs))return true;else if(ReferenceEquals(null,lhs)||ReferenceEquals(null,rhs))return false;if(lhs.Count!=rhs.Count)return false;
-using(var xe=lhs.GetEnumerator())using(var ye=rhs.GetEnumerator())while(xe.MoveNext()&&ye.MoveNext())if(!rhs.Contains(xe.Current)||!lhs.Contains(ye.Current))
-return false;return true;}public int GetHashCode(IList<FA>lhs){var result=0;for(int ic=lhs.Count,i=0;i<ic;++i){var fa=lhs[i];if(null!=fa)result^=fa.GetHashCode();
-}return result;}public int GetHashCode(ICollection<FA>lhs){var result=0;foreach(var fa in lhs)if(null!=fa)result^=fa.GetHashCode();return result;}public
- int GetHashCode(IDictionary<KeyValuePair<int,int>,FA>lhs){var result=0;foreach(var kvp in lhs)result^=kvp.GetHashCode();return result;}public static readonly
- _SetComparer Default=new _SetComparer();}
-#endregion
-}}namespace F{ partial class FA{
-#region DotGraphOptions
-/// <summary>
+partial class FFA{public bool IsDeterministic=true;public bool IsAccepting=false;public int AcceptSymbol=-1;public int Tag=0;public readonly IList<FFATransition>
+Transitions=new List<FFATransition>();public FFA(bool isAccepting,int acceptSymbol){IsAccepting=isAccepting;AcceptSymbol=acceptSymbol;}public FFA(){}public
+ bool IsFinal{get{return 0==Transitions.Count;}}public void AddEpsilon(FFA to){if(to.IsAccepting&&!IsAccepting){IsAccepting=true;AcceptSymbol=to.AcceptSymbol;
+}for(int ic=to.Transitions.Count,i=0;i<ic;++i){Transitions.Add(to.Transitions[i]);}IsDeterministic=false;}public IList<FFA>FillClosure(IList<FFA>result
+=null){if(null==result)result=new List<FFA>();if(result.Contains(this))return result;result.Add(this);for(int ic=Transitions.Count,i=0;i<ic;++i){var t
+=Transitions[i];t.To.FillClosure(result);}return result;}public IList<FFA>FillAcceptingStates(IList<FFA>result=null){return FillAcceptingStates(FillClosure(),
+result);}public static IList<FFA>FillAcceptingStates(IList<FFA>closure,IList<FFA>result=null){if(null==result)result=new List<FFA>();for(int ic=closure.Count,
+i=0;i<ic;++i){var fa=closure[i];if(fa.IsAccepting)result.Add(fa);}return result;}public IDictionary<FFA,int[]>FillInputTransitionRangesGroupedByState(IDictionary<FFA,
+int[]>result=null){var working=new Dictionary<FFA,List<KeyValuePair<int,int>>>();foreach(var trns in Transitions){List<KeyValuePair<int,int>>l;if(!working.TryGetValue(trns.To,
+out l)){l=new List<KeyValuePair<int,int>>();working.Add(trns.To,l);}l.Add(new KeyValuePair<int,int>(trns.Min,trns.Max));}if(null==result)result=new Dictionary<FFA,
+int[]>();foreach(var item in working){item.Value.Sort((x,y)=>{var c=x.Key.CompareTo(y.Key);if(0!=c)return c;return x.Value.CompareTo(y.Value);});_NormalizeSortedRangeList(item.Value);
+result.Add(item.Key,_FromPairs(item.Value));}return result;}static void _NormalizeSortedRangeList(IList<KeyValuePair<int,int>>pairs){var or=default(KeyValuePair<int,
+int>);for(int i=1;i<pairs.Count;++i){if(pairs[i-1].Value+1>=pairs[i].Key){var nr=new KeyValuePair<int,int>(pairs[i-1].Key,pairs[i].Value);pairs[i-1]=or
+=nr;pairs.RemoveAt(i);--i;}}}public FFA Clone(){return Clone(FillClosure());}public static FFA Clone(IList<FFA>closure){var nclosure=new FFA[closure.Count];
+for(var i=0;i<nclosure.Length;i++){var fa=closure[i];var nfa=new FFA();nfa.IsAccepting=fa.IsAccepting;nfa.AcceptSymbol=fa.AcceptSymbol;nfa.IsDeterministic
+=fa.IsDeterministic;nclosure[i]=nfa;}for(var i=0;i<nclosure.Length;i++){var fa=closure[i];var nfa=nclosure[i];for(int jc=fa.Transitions.Count,j=0;j<jc;
+++j){var t=fa.Transitions[j];nfa.Transitions.Add(new FFATransition(t.Min,t.Max,nclosure[closure.IndexOf(t.To)]));}}return nclosure[0];}public static FFA
+ Literal(IEnumerable<int>@string,int accept=-1){var result=new FFA();var current=result;foreach(var ch in@string){current.IsAccepting=false;var fa=new
+ FFA();fa.IsAccepting=true;fa.AcceptSymbol=accept;current.Transitions.Add(new FFATransition(ch,ch,fa));current=fa;}return result;}public static FFA Set(IEnumerable<KeyValuePair<int,
+int>>ranges,int accept=-1){var result=new FFA();var final=new FFA(true,accept);var pairs=new List<KeyValuePair<int,int>>(ranges);pairs.Sort((x,y)=>{var
+ c=x.Key.CompareTo(y.Key);if(0!=c)return c;return x.Value.CompareTo(y.Value);});foreach(var pair in pairs)result.Transitions.Add(new FFATransition(pair.Key,
+pair.Value,final));return result;}public static FFA Concat(IEnumerable<FFA>exprs,int accept=-1){FFA result=null,left=null,right=null;foreach(var val in
+ exprs){if(null==val)continue; var nval=val.Clone(); if(null==left){if(null==result)result=nval;left=nval; continue;}if(null==right){right=nval;} nval
+=right.Clone();_Concat(left,nval);right=null;left=nval;}if(null!=right){var acc=right.FillAcceptingStates();for(int ic=acc.Count,i=0;i<ic;++i)acc[i].AcceptSymbol
+=accept;}else{var acc=result.FillAcceptingStates();for(int ic=acc.Count,i=0;i<ic;++i)acc[i].AcceptSymbol=accept;}return result;}static void _Concat(FFA
+ lhs,FFA rhs){ var acc=lhs.FillAcceptingStates();for(int ic=acc.Count,i=0;i<ic;++i){var f=acc[i]; f.IsAccepting=false;f.AddEpsilon(rhs);}}public static
+ FFA Or(IEnumerable<FFA>exprs,int accept=-1){var result=new FFA();var final=new FFA(true,accept);foreach(var fa in exprs){if(null!=fa){var nfa=fa.Clone();
+result.AddEpsilon(nfa);var acc=nfa.FillAcceptingStates();for(int ic=acc.Count,i=0;i<ic;++i){var nffa=acc[i];nffa.IsAccepting=false;nffa.AddEpsilon(final);
+}}else result.AddEpsilon(final);}return result;}public static FFA Optional(FFA expr,int accept=-1){var result=expr.Clone();var acc=result.FillAcceptingStates();
+for(int ic=acc.Count,i=0;i<ic;++i){var fa=acc[i];fa.IsAccepting=true;fa.AcceptSymbol=accept;result.AddEpsilon(fa);}return result;}public static FFA Repeat(FFA
+ expr,int minOccurs=-1,int maxOccurs=-1,int accept=-1){expr=expr.Clone();if(minOccurs>0&&maxOccurs>0&&minOccurs>maxOccurs)throw new ArgumentOutOfRangeException(nameof(maxOccurs));
+FFA result;switch(minOccurs){case-1:case 0:switch(maxOccurs){case-1:case 0:result=new FFA(true,accept);result.AddEpsilon(expr);foreach(var afa in expr.FillAcceptingStates())
+{afa.AddEpsilon(result);}return result;case 1:result=Optional(expr,accept); return result;default:var l=new List<FFA>();expr=Optional(expr);l.Add(expr);
+for(int i=1;i<maxOccurs;++i){l.Add(expr.Clone());}result=Concat(l,accept); return result;}case 1:switch(maxOccurs){case-1:case 0:result=Concat(new FFA[]
+{expr,Repeat(expr,0,0,accept)},accept); return result;case 1: return expr;default:result=Concat(new FFA[]{expr,Repeat(expr.Clone(),0,maxOccurs-1)},accept);
+ return result;}default:switch(maxOccurs){case-1:case 0:result=Concat(new FFA[]{Repeat(expr,minOccurs,minOccurs,accept),Repeat(expr,0,0,accept)},accept);
+ return result;case 1:throw new ArgumentOutOfRangeException(nameof(maxOccurs));default:if(minOccurs==maxOccurs){var l=new List<FFA>();l.Add(expr); for
+(int i=1;i<minOccurs;++i){var e=expr.Clone(); l.Add(e);}result=Concat(l,accept); return result;}result=Concat(new FFA[]{Repeat(expr.Clone(),minOccurs,
+minOccurs,accept),Repeat(Optional(expr.Clone()),maxOccurs-minOccurs,maxOccurs-minOccurs,accept)},accept); return result;}} throw new NotImplementedException();
+}public static FFA CaseInsensitive(FFA expr,int accept=-1){var result=expr.Clone();var closure=new List<FFA>();result.FillClosure(closure);for(int ic=
+closure.Count,i=0;i<ic;++i){var fa=closure[i];var t=new List<FFATransition>(fa.Transitions);fa.Transitions.Clear();foreach(var trns in t){var f=char.ConvertFromUtf32(trns.Min);
+var l=char.ConvertFromUtf32(trns.Max);if(char.IsLower(f,0)){if(!char.IsLower(l,0))throw new NotSupportedException("Attempt to make an invalid range case insensitive");
+fa.Transitions.Add(new FFATransition(trns.Min,trns.Max,trns.To));f=f.ToUpperInvariant();l=l.ToUpperInvariant();fa.Transitions.Add(new FFATransition(char.ConvertToUtf32(f,
+0),char.ConvertToUtf32(l,0),trns.To));}else if(char.IsUpper(f,0)){if(!char.IsUpper(l,0))throw new NotSupportedException("Attempt to make an invalid range case insensitive");
+fa.Transitions.Add(new FFATransition(trns.Min,trns.Max,trns.To));f=f.ToLowerInvariant();l=l.ToLowerInvariant();fa.Transitions.Add(new FFATransition(char.ConvertToUtf32(f,
+0),char.ConvertToUtf32(l,0),trns.To));}else{fa.Transitions.Add(new FFATransition(trns.Min,trns.Max,trns.To));}}}return result;}public static FFA Parse(IEnumerable<char>
+input,int accept=-1,int line=1,int column=1,long position=0,string fileOrUrl=null){var lc=LexContext.Create(input);lc.EnsureStarted();lc.SetLocation(line,
+column,position,fileOrUrl);var result=Parse(lc,accept);return result;}internal static FFA Parse(LexContext pc,int accept=-1){FFA result=null,next=null;
+int ich;pc.EnsureStarted();while(true){switch(pc.Current){case-1: return result;case'.':var dot=FFA.Set(new KeyValuePair<int,int>[]{new KeyValuePair<int,
+int>(0,0x10ffff)},accept);if(null==result)result=dot;else{result=FFA.Concat(new FFA[]{result,dot},accept);}pc.Advance();result=_ParseModifier(result,pc,
+accept);break;case'\\':pc.Advance();pc.Expecting();var isNot=false;switch(pc.Current){case'P':isNot=true;goto case'p';case'p':pc.Advance();pc.Expecting('{');
+var uc=new StringBuilder();int uli=pc.Line;int uco=pc.Column;long upo=pc.Position;while(-1!=pc.Advance()&&'}'!=pc.Current)uc.Append((char)pc.Current);
+pc.Expecting('}');pc.Advance();int uci=0;switch(uc.ToString()){case"Pe":uci=21;break;case"Pc":uci=19;break;case"Cc":uci=14;break;case"Sc":uci=26;break;
+case"Pd":uci=19;break;case"Nd":uci=8;break;case"Me":uci=7;break;case"Pf":uci=23;break;case"Cf":uci=15;break;case"Pi":uci=22;break;case"Nl":uci=9;break;
+case"Zl":uci=12;break;case"Ll":uci=1;break;case"Sm":uci=25;break;case"Lm":uci=3;break;case"Sk":uci=27;break;case"Mn":uci=5;break;case"Ps":uci=20;break;
+case"Lo":uci=4;break;case"Cn":uci=29;break;case"No":uci=10;break;case"Po":uci=24;break;case"So":uci=28;break;case"Zp":uci=13;break;case"Co":uci=17;break;
+case"Zs":uci=11;break;case"Mc":uci=6;break;case"Cs":uci=16;break;case"Lt":uci=2;break;case"Lu":uci=0;break;}if(isNot){next=FFA.Set(_ToPairs(CharacterClasses.UnicodeCategories[uci]),
+accept);}else next=FFA.Set(_ToPairs(CharacterClasses.NotUnicodeCategories[uci]),accept);break;case'd':next=FFA.Set(_ToPairs(CharacterClasses.digit),accept);
+pc.Advance();break;case'D':next=FFA.Set(_NotRanges(CharacterClasses.digit),accept);pc.Advance();break;case's':next=FFA.Set(_ToPairs(CharacterClasses.space),
+accept);pc.Advance();break;case'S':next=FFA.Set(_NotRanges(CharacterClasses.space),accept);pc.Advance();break;case'w':next=FFA.Set(_ToPairs(CharacterClasses.word),
+accept);pc.Advance();break;case'W':next=FFA.Set(_NotRanges(CharacterClasses.word),accept);pc.Advance();break;default:if(-1!=(ich=_ParseEscapePart(pc)))
+{next=FFA.Literal(new int[]{ich},accept);}else{pc.Expecting(); return null;}break;}next=_ParseModifier(next,pc,accept);if(null!=result){result=FFA.Concat(new
+ FFA[]{result,next},accept);}else result=next;break;case')': return result;case'(':pc.Advance();pc.Expecting();next=Parse(pc,accept);pc.Expecting(')');
+pc.Advance();next=_ParseModifier(next,pc,accept);if(null==result)result=next;else{result=FFA.Concat(new FFA[]{result,next},accept);}break;case'|':if(-1
+!=pc.Advance()){next=Parse(pc,accept);result=FFA.Or(new FFA[]{result,next},accept);}else{result=FFA.Optional(result,accept);}break;case'[':var seti=_ParseSet(pc);
+IEnumerable<KeyValuePair<int,int>>set;if(seti.Key)set=_NotRanges(seti.Value);else set=_ToPairs(seti.Value);next=FFA.Set(set,accept);next=_ParseModifier(next,
+pc,accept);if(null==result)result=next;else{result=FFA.Concat(new FFA[]{result,next},accept);}break;default:ich=pc.Current;if(char.IsHighSurrogate((char)ich))
+{if(-1==pc.Advance())throw new ExpectingException("Expecting low surrogate in Unicode stream",pc.Line,pc.Column,pc.Position,pc.FileOrUrl,"low-surrogate");
+ich=char.ConvertToUtf32((char)ich,(char)pc.Current);}next=FFA.Literal(new int[]{ich},accept);pc.Advance();next=_ParseModifier(next,pc,accept);if(null==
+result)result=next;else{result=FFA.Concat(new FFA[]{result,next},accept);}break;}}}static KeyValuePair<bool,int[]>_ParseSet(LexContext pc){var result=
+new List<int>();pc.EnsureStarted();pc.Expecting('[');pc.Advance();pc.Expecting();var isNot=false;if('^'==pc.Current){isNot=true;pc.Advance();pc.Expecting();
+}var firstRead=true;int firstChar='\0';var readFirstChar=false;var wantRange=false;while(-1!=pc.Current&&(firstRead||']'!=pc.Current)){if(!wantRange){
+ if('['==pc.Current){pc.Advance();pc.Expecting();if(':'!=pc.Current){firstChar='[';readFirstChar=true;}else{pc.Advance();pc.Expecting();var ll=pc.CaptureBuffer.Length;
+if(!pc.TryReadUntil(':',false))throw new ExpectingException("Expecting character class",pc.Line,pc.Column,pc.Position,pc.FileOrUrl);pc.Expecting(':');
+pc.Advance();pc.Expecting(']');pc.Advance();var cls=pc.GetCapture(ll);int[]ranges;if(!CharacterClasses.Known.TryGetValue(cls,out ranges))throw new ExpectingException("Unknown character class \""
++cls+"\" specified",pc.Line,pc.Column,pc.Position,pc.FileOrUrl);result.AddRange(ranges);readFirstChar=false;wantRange=false;firstRead=false;continue;}
+}if(!readFirstChar){if(char.IsHighSurrogate((char)pc.Current)){var chh=(char)pc.Current;pc.Advance();pc.Expecting();firstChar=char.ConvertToUtf32(chh,
+(char)pc.Current);pc.Advance();pc.Expecting();}else if('\\'==pc.Current){pc.Advance();firstChar=_ParseRangeEscapePart(pc);}else{firstChar=pc.Current;pc.Advance();
+pc.Expecting();}readFirstChar=true;}else{if('-'==pc.Current){pc.Advance();pc.Expecting();wantRange=true;}else{result.Add(firstChar);result.Add(firstChar);
+readFirstChar=false;}}firstRead=false;}else{if('\\'!=pc.Current){var ch=0;if(char.IsHighSurrogate((char)pc.Current)){var chh=(char)pc.Current;pc.Advance();
+pc.Expecting();ch=char.ConvertToUtf32(chh,(char)pc.Current);}else ch=(char)pc.Current;pc.Advance();pc.Expecting();result.Add(firstChar);result.Add(ch);
+}else{result.Add(firstChar);pc.Advance();result.Add(_ParseRangeEscapePart(pc));}wantRange=false;readFirstChar=false;}}if(readFirstChar){result.Add(firstChar);
+result.Add(firstChar);if(wantRange){result.Add('-');result.Add('-');}}pc.Expecting(']');pc.Advance();return new KeyValuePair<bool,int[]>(isNot,result.ToArray());
+}static int[]_ParseRanges(LexContext pc){pc.EnsureStarted();var result=new List<int>();int[]next=null;bool readDash=false;while(-1!=pc.Current&&']'!=pc.Current)
+{switch(pc.Current){case'[': if(null!=next){result.Add(next[0]);result.Add(next[1]);if(readDash){result.Add('-');result.Add('-');}}pc.Advance();pc.Expecting(':');
+pc.Advance();var l=pc.CaptureBuffer.Length;var lin=pc.Line;var col=pc.Column;var pos=pc.Position;pc.TryReadUntil(':',false);var n=pc.GetCapture(l);pc.Advance();
+pc.Expecting(']');pc.Advance();int[]rngs;if(!CharacterClasses.Known.TryGetValue(n,out rngs)){var sa=new string[CharacterClasses.Known.Count];CharacterClasses.Known.Keys.CopyTo(sa,
+0);throw new ExpectingException("Invalid character class "+n,lin,col,pos,pc.FileOrUrl,sa);}result.AddRange(rngs);readDash=false;next=null;break;case'\\':
+pc.Advance();pc.Expecting();switch(pc.Current){case'h':_ParseCharClassEscape(pc,"space",result,ref next,ref readDash);break;case'd':_ParseCharClassEscape(pc,
+"digit",result,ref next,ref readDash);break;case'D':_ParseCharClassEscape(pc,"^digit",result,ref next,ref readDash);break;case'l':_ParseCharClassEscape(pc,
+"lower",result,ref next,ref readDash);break;case's':_ParseCharClassEscape(pc,"space",result,ref next,ref readDash);break;case'S':_ParseCharClassEscape(pc,
+"^space",result,ref next,ref readDash);break;case'u':_ParseCharClassEscape(pc,"upper",result,ref next,ref readDash);break;case'w':_ParseCharClassEscape(pc,
+"word",result,ref next,ref readDash);break;case'W':_ParseCharClassEscape(pc,"^word",result,ref next,ref readDash);break;default:var ch=(char)_ParseRangeEscapePart(pc);
+if(null==next)next=new int[]{ch,ch};else if(readDash){result.Add(next[0]);result.Add(ch);next=null;readDash=false;}else{result.AddRange(next);next=new
+ int[]{ch,ch};}break;}break;case'-':pc.Advance();if(null==next){next=new int[]{'-','-'};readDash=false;}else{if(readDash)result.AddRange(next);readDash
+=true;}break;default:if(null==next){next=new int[]{pc.Current,pc.Current};}else{if(readDash){result.Add(next[0]);result.Add((char)pc.Current);next=null;
+readDash=false;}else{result.AddRange(next);next=new int[]{pc.Current,pc.Current};}}pc.Advance();break;}}if(null!=next){result.AddRange(next);if(readDash)
+{result.Add('-');result.Add('-');}}return result.ToArray();}static void _ParseCharClassEscape(LexContext pc,string cls,List<int>result,ref int[]next,ref
+ bool readDash){if(null!=next){result.AddRange(next);if(readDash){result.Add('-');result.Add('-');}result.Add('-');result.Add('-');}pc.Advance();int[]
+rngs;if(!CharacterClasses.Known.TryGetValue(cls,out rngs)){var sa=new string[CharacterClasses.Known.Count];CharacterClasses.Known.Keys.CopyTo(sa,0);throw
+ new ExpectingException("Invalid character class "+cls,pc.Line,pc.Column,pc.Position,pc.FileOrUrl,sa);}result.AddRange(rngs);next=null;readDash=false;
+}static FFA _ParseModifier(FFA expr,LexContext pc,int accept){var line=pc.Line;var column=pc.Column;var position=pc.Position;switch(pc.Current){case'*':
+expr=Repeat(expr,0,0,accept);pc.Advance();break;case'+':expr=Repeat(expr,1,0,accept);pc.Advance();break;case'?':expr=Optional(expr,accept);pc.Advance();
+break;case'{':pc.Advance();pc.TrySkipWhiteSpace();pc.Expecting('0','1','2','3','4','5','6','7','8','9',',','}');var min=-1;var max=-1;if(','!=pc.Current
+&&'}'!=pc.Current){var l=pc.CaptureBuffer.Length;pc.TryReadDigits();min=int.Parse(pc.GetCapture(l));pc.TrySkipWhiteSpace();}if(','==pc.Current){pc.Advance();
+pc.TrySkipWhiteSpace();pc.Expecting('0','1','2','3','4','5','6','7','8','9','}');if('}'!=pc.Current){var l=pc.CaptureBuffer.Length;pc.TryReadDigits();
+max=int.Parse(pc.GetCapture(l));pc.TrySkipWhiteSpace();}}else{max=min;}pc.Expecting('}');pc.Advance();expr=Repeat(expr,min,max,accept);break;}return expr;
+}static byte _FromHexChar(char hex){if(':'>hex&&'/'<hex)return(byte)(hex-'0');if('G'>hex&&'@'<hex)return(byte)(hex-'7'); if('g'>hex&&'`'<hex)return(byte)(hex
+-'W'); throw new ArgumentException("The value was not hex.","hex");}static bool _IsHexChar(char hex){if(':'>hex&&'/'<hex)return true;if('G'>hex&&'@'<hex)
+return true;if('g'>hex&&'`'<hex)return true;return false;} static int _ParseEscapePart(LexContext pc){if(-1==pc.Current)return-1;switch(pc.Current){case
+'f':pc.Advance();return'\f';case'v':pc.Advance();return'\v';case't':pc.Advance();return'\t';case'n':pc.Advance();return'\n';case'r':pc.Advance();return
+'\r';case'x':if(-1==pc.Advance()||!_IsHexChar((char)pc.Current))return'x';byte b=_FromHexChar((char)pc.Current);if(-1==pc.Advance()||!_IsHexChar((char)pc.Current))
+return unchecked((char)b);b<<=4;b|=_FromHexChar((char)pc.Current);if(-1==pc.Advance()||!_IsHexChar((char)pc.Current))return unchecked((char)b);b<<=4;b
+|=_FromHexChar((char)pc.Current);if(-1==pc.Advance()||!_IsHexChar((char)pc.Current))return unchecked((char)b);b<<=4;b|=_FromHexChar((char)pc.Current);
+return unchecked((char)b);case'u':if(-1==pc.Advance())return'u';ushort u=_FromHexChar((char)pc.Current);u<<=4;if(-1==pc.Advance())return unchecked((char)u);
+u|=_FromHexChar((char)pc.Current);u<<=4;if(-1==pc.Advance())return unchecked((char)u);u|=_FromHexChar((char)pc.Current);u<<=4;if(-1==pc.Advance())return
+ unchecked((char)u);u|=_FromHexChar((char)pc.Current);return unchecked((char)u);default:int i=pc.Current;pc.Advance();if(char.IsHighSurrogate((char)i))
+{i=char.ConvertToUtf32((char)i,(char)pc.Current);pc.Advance();}return(char)i;}}static int _ParseRangeEscapePart(LexContext pc){if(-1==pc.Current)return
+-1;switch(pc.Current){case'f':pc.Advance();return'\f';case'v':pc.Advance();return'\v';case't':pc.Advance();return'\t';case'n':pc.Advance();return'\n';
+case'r':pc.Advance();return'\r';case'x':if(-1==pc.Advance()||!_IsHexChar((char)pc.Current))return'x';byte b=_FromHexChar((char)pc.Current);if(-1==pc.Advance()
+||!_IsHexChar((char)pc.Current))return unchecked((char)b);b<<=4;b|=_FromHexChar((char)pc.Current);if(-1==pc.Advance()||!_IsHexChar((char)pc.Current))return
+ unchecked((char)b);b<<=4;b|=_FromHexChar((char)pc.Current);if(-1==pc.Advance()||!_IsHexChar((char)pc.Current))return unchecked((char)b);b<<=4;b|=_FromHexChar((char)pc.Current);
+return unchecked((char)b);case'u':if(-1==pc.Advance())return'u';ushort u=_FromHexChar((char)pc.Current);u<<=4;if(-1==pc.Advance())return unchecked((char)u);
+u|=_FromHexChar((char)pc.Current);u<<=4;if(-1==pc.Advance())return unchecked((char)u);u|=_FromHexChar((char)pc.Current);u<<=4;if(-1==pc.Advance())return
+ unchecked((char)u);u|=_FromHexChar((char)pc.Current);return unchecked((char)u);default:int i=pc.Current;pc.Advance();if(char.IsHighSurrogate((char)i))
+{i=char.ConvertToUtf32((char)i,(char)pc.Current);pc.Advance();}return(char)i;}}static KeyValuePair<int,int>[]_ToPairs(int[]packedRanges){var result=new
+ KeyValuePair<int,int>[packedRanges.Length/2];for(var i=0;i<result.Length;++i){var j=i*2;result[i]=new KeyValuePair<int,int>(packedRanges[j],packedRanges[j
++1]);}return result;}static int[]_FromPairs(IList<KeyValuePair<int,int>>pairs){var result=new int[pairs.Count*2];for(int ic=pairs.Count,i=0;i<ic;++i){
+var pair=pairs[i];var j=i*2;result[j]=pair.Key;result[j+1]=pair.Value;}return result;}static IList<KeyValuePair<int,int>>_NotRanges(int[]ranges){return
+ new List<KeyValuePair<int,int>>(_NotRanges(_ToPairs(ranges)));}static IEnumerable<KeyValuePair<int,int>>_NotRanges(IEnumerable<KeyValuePair<int,int>>
+ranges){ var last=0x10ffff;using(var e=ranges.GetEnumerator()){if(!e.MoveNext()){yield return new KeyValuePair<int,int>(0x0,0x10ffff);yield break;}if(e.Current.Key
+>0){yield return new KeyValuePair<int,int>(0,unchecked(e.Current.Key-1));last=e.Current.Value;if(0x10ffff<=last)yield break;}while(e.MoveNext()){if(0x10ffff
+<=last)yield break;if(unchecked(last+1)<e.Current.Key)yield return new KeyValuePair<int,int>(unchecked(last+1),unchecked((e.Current.Key-1)));last=e.Current.Value;
+}if(0x10ffff>last)yield return new KeyValuePair<int,int>(unchecked((last+1)),0x10ffff);}}public FFA ToDfa(){return _Determinize(this);}public FFA ToMinimized()
+{return _Minimize(this);}public void Totalize(){Totalize(FillClosure());}public static void Totalize(IList<FFA>closure){var s=new FFA();s.Transitions.Add(new
+ FFATransition(0,0x10ffff,s));foreach(FFA p in closure){int maxi=0;var sortedTrans=new List<FFATransition>(p.Transitions);sortedTrans.Sort((x,y)=>{var
+ c=x.Min.CompareTo(y.Min);if(0!=c)return c;return x.Max.CompareTo(y.Max);});foreach(var t in sortedTrans){if(t.Min>maxi){p.Transitions.Add(new FFATransition(maxi,
+(t.Min-1),s));}if(t.Max+1>maxi){maxi=t.Max+1;}}if(maxi<=0x10ffff){p.Transitions.Add(new FFATransition(maxi,0x10ffff,s));}}}static FFA _Minimize(FFA a)
+{a=a.ToDfa();var tr=a.Transitions;if(1==tr.Count){FFATransition t=tr[0];if(t.To==a&&t.Min==0&&t.Max==0x10ffff){return a;}}a.Totalize(); var cl=a.FillClosure();
+var states=new FFA[cl.Count];int number=0;foreach(var q in cl){states[number]=q;q.Tag=number;++number;}var pp=new List<int>();for(int ic=cl.Count,i=0;
+i<ic;++i){var ffa=cl[i];pp.Add(0);foreach(var t in ffa.Transitions){pp.Add(t.Min);if(t.Max<0x10ffff){pp.Add((t.Max+1));}}}var sigma=new int[pp.Count];
+pp.CopyTo(sigma,0);Array.Sort(sigma); var reverse=new List<List<Queue<FFA>>>();foreach(var s in states){var v=new List<Queue<FFA>>();_Init(v,sigma.Length);
+reverse.Add(v);}var reverseNonempty=new bool[states.Length,sigma.Length];var partition=new List<LinkedList<FFA>>();_Init(partition,states.Length);var block
+=new int[states.Length];var active=new _FList[states.Length,sigma.Length];var active2=new _FListNode[states.Length,sigma.Length];var pending=new Queue<_IntPair>();
+var pending2=new bool[sigma.Length,states.Length];var split=new List<FFA>();var split2=new bool[states.Length];var refine=new List<int>();var refine2=
+new bool[states.Length];var splitblock=new List<List<FFA>>();_Init(splitblock,states.Length);for(int q=0;q<states.Length;q++){splitblock[q]=new List<FFA>();
+partition[q]=new LinkedList<FFA>();for(int x=0;x<sigma.Length;x++){reverse[q][x]=new Queue<FFA>();active[q,x]=new _FList();}} foreach(var qq in states)
+{int j=qq.IsAccepting?0:1;partition[j].AddLast(qq);block[qq.Tag]=j;for(int x=0;x<sigma.Length;x++){var y=sigma[x];var p=qq._Step(y);var pn=p.Tag;reverse[pn][x].Enqueue(qq);
+reverseNonempty[pn,x]=true;}} for(int j=0;j<=1;j++){for(int x=0;x<sigma.Length;x++){foreach(var qq in partition[j]){if(reverseNonempty[qq.Tag,x]){active2[qq.Tag,
+x]=active[j,x].Add(qq);}}}} for(int x=0;x<sigma.Length;x++){int a0=active[0,x].Count;int a1=active[1,x].Count;int j=a0<=a1?0:1;pending.Enqueue(new _IntPair(j,
+x));pending2[x,j]=true;} int k=2;while(pending.Count>0){_IntPair ip=pending.Dequeue();int p=ip.N1;int x=ip.N2;pending2[x,p]=false; for(var m=active[p,
+x].First;m!=null;m=m.Next){foreach(var s in reverse[m.State.Tag][x]){if(!split2[s.Tag]){split2[s.Tag]=true;split.Add(s);int j=block[s.Tag];splitblock[j].Add(s);
+if(!refine2[j]){refine2[j]=true;refine.Add(j);}}}} foreach(int j in refine){if(splitblock[j].Count<partition[j].Count){LinkedList<FFA>b1=partition[j];
+LinkedList<FFA>b2=partition[k];foreach(var s in splitblock[j]){b1.Remove(s);b2.AddLast(s);block[s.Tag]=k;for(int c=0;c<sigma.Length;c++){_FListNode sn
+=active2[s.Tag,c];if(sn!=null&&sn.StateList==active[j,c]){sn.Remove();active2[s.Tag,c]=active[k,c].Add(s);}}} for(int c=0;c<sigma.Length;c++){int aj=active[j,
+c].Count;int ak=active[k,c].Count;if(!pending2[c,j]&&0<aj&&aj<=ak){pending2[c,j]=true;pending.Enqueue(new _IntPair(j,c));}else{pending2[c,k]=true;pending.Enqueue(new
+ _IntPair(k,c));}}k++;}foreach(var s in splitblock[j]){split2[s.Tag]=false;}refine2[j]=false;splitblock[j].Clear();}split.Clear();refine.Clear();} var
+ newstates=new FFA[k];for(int n=0;n<newstates.Length;n++){var s=new FFA();newstates[n]=s;foreach(var q in partition[n]){if(q==a){a=s;}s.IsAccepting=q.IsAccepting;
+s.AcceptSymbol=q.AcceptSymbol;s.Tag=q.Tag; q.Tag=n;}} foreach(var s in newstates){var st=states[s.Tag];s.IsAccepting=st.IsAccepting;s.AcceptSymbol=st.AcceptSymbol;
+foreach(var t in st.Transitions){s.Transitions.Add(new FFATransition(t.Min,t.Max,newstates[t.To.Tag]));}} foreach(var ffa in a.FillClosure()){var itrns
+=new List<FFATransition>(ffa.Transitions);foreach(var trns in itrns){var acc=trns.To.FillAcceptingStates();if(0==acc.Count){ffa.Transitions.Remove(trns);
+}}}return a;}FFA _Step(int input){for(int ic=Transitions.Count,i=0;i<ic;++i){var t=Transitions[i];if(t.Min<=input&&input<=t.Max)return t.To;}return null;
+}static void _Init<T>(IList<T>list,int count){for(int i=0;i<count;++i){list.Add(default(T));}}private sealed class _IntPair{private readonly int n1;private
+ readonly int n2;public _IntPair(int n1,int n2){this.n1=n1;this.n2=n2;}public int N1{get{return n1;}}public int N2{get{return n2;}}}private sealed class
+ _FList{public int Count{get;set;}public _FListNode First{get;set;}public _FListNode Last{get;set;}public _FListNode Add(FFA q){return new _FListNode(q,
+this);}}private sealed class _FListNode{public _FListNode(FFA q,_FList sl){State=q;StateList=sl;if(sl.Count++==0){sl.First=sl.Last=this;}else{sl.Last.Next
+=this;Prev=sl.Last;sl.Last=this;}}public _FListNode Next{get;private set;}private _FListNode Prev{get;set;}public _FList StateList{get;private set;}public
+ FFA State{get;private set;}public void Remove(){StateList.Count--;if(StateList.First==this){StateList.First=Next;}else{Prev.Next=Next;}if(StateList.Last
+==this){StateList.Last=Prev;}else{Next.Prev=Prev;}}}static FFA _Determinize(FFA fa){var p=new HashSet<int>();var closure=new List<FFA>();fa.FillClosure(closure);
+for(int ic=closure.Count,i=0;i<ic;++i){var ffa=closure[i];p.Add(0);foreach(var t in ffa.Transitions){p.Add(t.Min);if(t.Max<0x10ffff){p.Add((t.Max+1));
+}}}var points=new int[p.Count];p.CopyTo(points,0);Array.Sort(points);var comparer=_SetComparer.Default;var sets=new Dictionary<HashSet<FFA>,HashSet<FFA>>(comparer);
+var working=new Queue<HashSet<FFA>>();var dfaMap=new Dictionary<HashSet<FFA>,FFA>(comparer);var initial=new HashSet<FFA>();initial.Add(fa);sets.Add(initial,
+initial);working.Enqueue(initial);var result=new FFA();foreach(var afa in initial){if(afa.IsAccepting){result.IsAccepting=true;result.AcceptSymbol=afa.AcceptSymbol;
+break;}}dfaMap.Add(initial,result);while(working.Count>0){var s=working.Dequeue();FFA dfa;dfaMap.TryGetValue(s,out dfa);foreach(FFA q in s){if(q.IsAccepting)
+{dfa.IsAccepting=true;dfa.AcceptSymbol=q.AcceptSymbol;break;}}for(var i=0;i<points.Length;i++){var pnt=points[i];var set=new HashSet<FFA>();foreach(FFA
+ c in s){foreach(var trns in c.Transitions){if(trns.Min<=pnt&&pnt<=trns.Max){set.Add(trns.To);}}}if(!sets.ContainsKey(set)){sets.Add(set,set);working.Enqueue(set);
+dfaMap.Add(set,new FFA());}FFA dst;dfaMap.TryGetValue(set,out dst);int first=pnt;int last;if(i+1<points.Length)last=(points[i+1]-1);else last=0x10ffff;
+dfa.Transitions.Add(new FFATransition(first,last,dst));}} foreach(var ffa in result.FillClosure()){var itrns=new List<FFATransition>(ffa.Transitions);
+foreach(var trns in itrns){var acc=trns.To.FillAcceptingStates();if(0==acc.Count){ffa.Transitions.Remove(trns);}}}return result;} private sealed class
+ _SetComparer:IEqualityComparer<IList<FFA>>,IEqualityComparer<ICollection<FFA>>,IEqualityComparer<ISet<FFA>>{ public bool Equals(ISet<FFA>lhs,ISet<FFA>
+rhs){if(ReferenceEquals(lhs,rhs))return true;else if(ReferenceEquals(null,lhs)||ReferenceEquals(null,rhs))return false;return lhs.SetEquals(rhs);} public
+ bool Equals(IList<FFA>lhs,IList<FFA>rhs){if(ReferenceEquals(lhs,rhs))return true;else if(ReferenceEquals(null,lhs)||ReferenceEquals(null,rhs))return false;
+if(lhs.Count!=rhs.Count)return false;using(var xe=lhs.GetEnumerator())using(var ye=rhs.GetEnumerator())while(xe.MoveNext()&&ye.MoveNext())if(!rhs.Contains(xe.Current)
+||!lhs.Contains(ye.Current))return false;return true;} public bool Equals(ICollection<FFA>lhs,ICollection<FFA>rhs){if(ReferenceEquals(lhs,rhs))return true;
+else if(ReferenceEquals(null,lhs)||ReferenceEquals(null,rhs))return false;if(lhs.Count!=rhs.Count)return false;using(var xe=lhs.GetEnumerator())using(var
+ ye=rhs.GetEnumerator())while(xe.MoveNext()&&ye.MoveNext())if(!rhs.Contains(xe.Current)||!lhs.Contains(ye.Current))return false;return true;}public int
+ GetHashCode(IList<FFA>lhs){var result=0;for(int ic=lhs.Count,i=0;i<ic;++i){var fa=lhs[i];if(null!=fa)result^=fa.GetHashCode();}return result;}public int
+ GetHashCode(ISet<FFA>lhs){var result=0;foreach(var fa in lhs)if(null!=fa)result^=fa.GetHashCode();return result;}public int GetHashCode(ICollection<FFA>
+lhs){var result=0;foreach(var fa in lhs)if(null!=fa)result^=fa.GetHashCode();return result;}public static readonly _SetComparer Default=new _SetComparer();
+}}}namespace F{partial class FFA{/// <summary>
 /// Represents optional rendering parameters for a dot graph.
 /// </summary>
 public sealed class DotGraphOptions{/// <summary>
@@ -1039,45 +997,27 @@ public sealed class DotGraphOptions{/// <summary>
 public int Dpi{get;set;}=300;/// <summary>
 /// The prefix used for state labels
 /// </summary>
-public string StatePrefix{get;set;}="q";/// <summary>
-/// If non-null, specifies a debug render using the specified input string.
-/// </summary>
-/// <remarks>The debug render is useful for tracking the transitions in a state machine</remarks>
-public IEnumerable<char>DebugString{get;set;}=null;/// <summary>
-/// If non-null, specifies the source NFA from which this DFA was derived - used for debug view
-/// </summary>
-public FA DebugSourceNfa{get;set;}=null;}
-#endregion
-/// <summary>
-/// Writes a Graphviz dot specification to the specified <see cref="TextWriter"/>
-/// </summary>
-/// <param name="writer">The writer</param>
-/// <param name="options">A <see cref="DotGraphOptions"/> instance with any options, or null to use the defaults</param>
-public void WriteDotTo(TextWriter writer,DotGraphOptions options=null){var closure=new List<FA>();FillClosure(closure);_WriteDotTo(closure,writer,options);
-}/// <summary>
+public string StatePrefix{get;set;}="q";}/// <summary>
 /// Writes a Graphviz dot specification of the specified closure to the specified <see cref="TextWriter"/>
 /// </summary>
 /// <param name="closure">The closure of all states</param>
 /// <param name="writer">The writer</param>
 /// <param name="options">A <see cref="DotGraphOptions"/> instance with any options, or null to use the defaults</param>
-static void _WriteDotTo(IList<FA>closure,TextWriter writer,DotGraphOptions options=null){if(null==options)options=new DotGraphOptions();string spfx=null
-==options.StatePrefix?"q":options.StatePrefix;writer.WriteLine("digraph FA {");writer.WriteLine("rankdir=LR");writer.WriteLine("node [shape=circle]");
-var finals=new List<FA>();var neutrals=new List<FA>();var accepting=closure[0].FillAcceptingStates();foreach(var ffa in closure)if(ffa.IsFinal&&!ffa.IsAccepting)
-finals.Add(ffa);int i=0;foreach(var ffa in closure){if(!finals.Contains(ffa)){if(ffa.IsAccepting)accepting.Add(ffa);else if(ffa.IsNeutral)neutrals.Add(ffa);
-}var rngGrps=ffa.FillInputTransitionRangesGroupedByState();foreach(var rngGrp in rngGrps){var di=closure.IndexOf(rngGrp.Key);writer.Write(spfx);writer.Write(i);
-writer.Write("->");writer.Write(spfx);writer.Write(di.ToString());writer.Write(" [label=\"");var sb=new StringBuilder();var rngs=rngGrp.Value;var nrngs
-=RangeUtility.NotRanges(rngs);var isNot=false;if(nrngs.Length<rngs.Length||(nrngs.Length==rngs.Length&&0x10ffff==rngs[rngs.Length-1])){isNot=true;if(0
-!=nrngs.Length){sb.Append("^");}else{sb.Append(".");}rngs=nrngs;}for(var r=0;r<rngs.Length;r+=2)_AppendRangeTo(sb,rngs,r);if(isNot||sb.Length!=1||(char.IsWhiteSpace(sb.ToString(),
-0))){writer.Write('[');writer.Write(_EscapeLabel(sb.ToString()));writer.Write(']');}else writer.Write(_EscapeLabel(sb.ToString()));writer.WriteLine("\"]");
-} foreach(var fffa in ffa.EpsilonTransitions){writer.Write(spfx);writer.Write(i);writer.Write("->");writer.Write(spfx);writer.Write(closure.IndexOf(fffa));
-writer.WriteLine(" [style=dashed,color=gray]");}++i;}string delim="";i=0;foreach(var ffa in closure){writer.Write(spfx);writer.Write(i);writer.Write(" [");
-writer.Write("label=<");writer.Write("<TABLE BORDER=\"0\"><TR><TD>");writer.Write(spfx);writer.Write("<SUB>");writer.Write(i);writer.Write("</SUB></TD></TR>");
-if(ffa.IsAccepting){writer.Write("<TR><TD>");writer.Write(Convert.ToString(ffa.AcceptSymbol).Replace("\"","&quot;"));writer.Write("</TD></TR>");}writer.Write("</TABLE>");
-writer.Write(">");bool isfinal=false;if(accepting.Contains(ffa)||(isfinal=finals.Contains(ffa)))writer.Write(",shape=doublecircle");if(isfinal||neutrals.Contains(ffa))
-{writer.Write(",color=gray");}writer.WriteLine("]");++i;}delim="";if(0<accepting.Count){foreach(var ntfa in accepting){writer.Write(delim);writer.Write(spfx);
-writer.Write(closure.IndexOf(ntfa));delim=",";}writer.WriteLine(" [shape=doublecircle]");}delim="";if(0<neutrals.Count){foreach(var ntfa in neutrals){
-writer.Write(delim);writer.Write(spfx);writer.Write(closure.IndexOf(ntfa));delim=",";}writer.WriteLine(" [color=gray]");delim="";}delim="";if(0<finals.Count)
-{foreach(var ntfa in finals){writer.Write(delim);writer.Write(spfx);writer.Write(closure.IndexOf(ntfa));delim=",";}writer.WriteLine(" [shape=doublecircle,color=gray]");
+static void _WriteDotTo(IList<FFA>closure,TextWriter writer,DotGraphOptions options=null){if(null==options)options=new DotGraphOptions();string spfx=null
+==options.StatePrefix?"q":options.StatePrefix;writer.WriteLine("digraph FFA {");writer.WriteLine("rankdir=LR");writer.WriteLine("node [shape=circle]");
+var finals=new List<FFA>();var accepting=closure[0].FillAcceptingStates();foreach(var ffa in closure)if(ffa.IsFinal&&!ffa.IsAccepting)finals.Add(ffa);
+int i=0;foreach(var ffa in closure){if(!finals.Contains(ffa)){if(ffa.IsAccepting)accepting.Add(ffa);}var rngGrps=ffa.FillInputTransitionRangesGroupedByState();
+foreach(var rngGrp in rngGrps){var di=closure.IndexOf(rngGrp.Key);writer.Write(spfx);writer.Write(i);writer.Write("->");writer.Write(spfx);writer.Write(di.ToString());
+writer.Write(" [label=\"");var sb=new StringBuilder();IList<KeyValuePair<int,int>>rngs=_ToPairs(rngGrp.Value);var nrngs=new List<KeyValuePair<int,int>>(
+_NotRanges(rngs));var isNot=false;if(nrngs.Count<rngs.Count||(nrngs.Count==rngs.Count&&0x10ffff==rngs[rngs.Count-1].Value)){isNot=true;if(0!=nrngs.Count)
+{sb.Append("^");}else{sb.Append(".");}rngs=nrngs;}var rpairs=_FromPairs(rngs);for(var r=0;r<rpairs.Length;r+=2)_AppendRangeTo(sb,rpairs,r);if(isNot||sb.Length
+!=1||(char.IsWhiteSpace(sb.ToString(),0))){writer.Write('[');writer.Write(_EscapeLabel(sb.ToString()));writer.Write(']');}else writer.Write(_EscapeLabel(sb.ToString()));
+writer.WriteLine("\"]");}++i;}i=0;foreach(var ffa in closure){writer.Write(spfx);writer.Write(i);writer.Write(" [");writer.Write("label=<");writer.Write("<TABLE BORDER=\"0\"><TR><TD>");
+writer.Write(spfx);writer.Write("<SUB>");writer.Write(i);writer.Write("</SUB></TD></TR>");if(ffa.IsAccepting){writer.Write("<TR><TD>");writer.Write(Convert.ToString(ffa.AcceptSymbol).Replace("\"",
+"&quot;"));writer.Write("</TD></TR>");}writer.Write("</TABLE>");writer.Write(">");bool isfinal=false;if(accepting.Contains(ffa)||(isfinal=finals.Contains(ffa)))
+writer.Write(",shape=doublecircle");if(isfinal){writer.Write(",color=gray");}writer.WriteLine("]");++i;}string delim="";if(0<accepting.Count){foreach(var
+ ntfa in accepting){writer.Write(delim);writer.Write(spfx);writer.Write(closure.IndexOf(ntfa));delim=",";}writer.WriteLine(" [shape=doublecircle]");}delim
+="";if(0<finals.Count){foreach(var ntfa in finals){writer.Write(delim);writer.Write(spfx);writer.Write(closure.IndexOf(ntfa));delim=",";}writer.WriteLine(" [shape=doublecircle,color=gray]");
 }writer.WriteLine("}");}/// <summary>
 /// Renders Graphviz output for this machine to the specified file
 /// </summary>
@@ -1088,7 +1028,7 @@ if(0==string.Compare(".png",ext,StringComparison.InvariantCultureIgnoreCase))arg
 args+="jpg";else if(0==string.Compare(".bmp",ext,StringComparison.InvariantCultureIgnoreCase))args+="bmp";else if(0==string.Compare(".svg",ext,StringComparison.InvariantCultureIgnoreCase))
 args+="svg";if(0<options.Dpi)args+=" -Gdpi="+options.Dpi.ToString();args+=" -o\""+filename+"\"";var psi=new ProcessStartInfo("dot",args){CreateNoWindow
 =true,UseShellExecute=false,RedirectStandardInput=true};using(var proc=Process.Start(psi)){WriteDotTo(proc.StandardInput,options);proc.StandardInput.Close();
-proc.WaitForExit();}}/// <summary>
+proc.WaitForExit();}}public void WriteDotTo(TextWriter writer,DotGraphOptions options=null){_WriteDotTo(FillClosure(),writer,options);}/// <summary>
 /// Renders Graphviz output for this machine to a stream
 /// </summary>
 /// <param name="format">The output format. The format to render can be any supported dot output format. See dot command line documation for details.</param>
@@ -1098,265 +1038,15 @@ proc.WaitForExit();}}/// <summary>
 public Stream RenderToStream(string format,bool copy=false,DotGraphOptions options=null){if(null==options)options=new DotGraphOptions();string args="-T";
 args+=string.Concat(" ",format);if(0<options.Dpi)args+=" -Gdpi="+options.Dpi.ToString();var psi=new ProcessStartInfo("dot",args){CreateNoWindow=true,UseShellExecute
 =false,RedirectStandardInput=true,RedirectStandardOutput=true};using(var proc=Process.Start(psi)){WriteDotTo(proc.StandardInput,options);proc.StandardInput.Close();
-if(!copy)return proc.StandardOutput.BaseStream;else{MemoryStream stm=new MemoryStream();proc.StandardOutput.BaseStream.CopyTo(stm);proc.StandardOutput.BaseStream.Close();
-proc.WaitForExit();return stm;}}}static void _AppendRangeTo(StringBuilder builder,int[]ranges,int index){_AppendRangeCharTo(builder,ranges[index]);if(0
-==ranges[index+1].CompareTo(ranges[index]))return;if(ranges[index+1]==ranges[index]+1){_AppendRangeCharTo(builder,ranges[index+1]);return;}builder.Append('-');
-_AppendRangeCharTo(builder,ranges[index+1]);}static void _AppendRangeCharTo(StringBuilder builder,int rangeChar){switch(rangeChar){case'.':case'[':case
-']':case'^':case'-':case'\\':builder.Append('\\');builder.Append(char.ConvertFromUtf32(rangeChar));return;case'\t':builder.Append("\\t");return;case'\n':
-builder.Append("\\n");return;case'\r':builder.Append("\\r");return;case'\0':builder.Append("\\0");return;case'\f':builder.Append("\\f");return;case'\v':
-builder.Append("\\v");return;case'\b':builder.Append("\\b");return;default:var s=char.ConvertFromUtf32(rangeChar);if(!char.IsLetterOrDigit(s,0)&&!char.IsSeparator(s,
-0)&&!char.IsPunctuation(s,0)&&!char.IsSymbol(s,0)){if(s.Length==1){builder.Append("\\u");builder.Append(unchecked((ushort)rangeChar).ToString("x4"));}
-else{builder.Append("\\U");builder.Append(rangeChar.ToString("x8"));}}else builder.Append(s);break;}}static string _EscapeLabel(string label){if(string.IsNullOrEmpty(label))
-return label;string result=label.Replace("\\",@"\\");result=result.Replace("\"","\\\"");result=result.Replace("\n","\\n");result=result.Replace("\r","\\r");
+if(!copy)return proc.StandardOutput.BaseStream;else{var stm=new MemoryStream();proc.StandardOutput.BaseStream.CopyTo(stm);proc.StandardOutput.BaseStream.Close();
+proc.WaitForExit();return stm;}}}static void _AppendRangeTo(StringBuilder builder,int[]ranges,int index){var first=ranges[index];var last=ranges[index
++1];_AppendRangeCharTo(builder,first);if(0==last.CompareTo(first))return;if(last==first+1){_AppendRangeCharTo(builder,last);return;}builder.Append('-');
+_AppendRangeCharTo(builder,last);}static void _AppendRangeCharTo(StringBuilder builder,int rangeChar){switch(rangeChar){case'.':case'[':case']':case'^':
+case'-':case'\\':builder.Append('\\');builder.Append(char.ConvertFromUtf32(rangeChar));return;case'\t':builder.Append("\\t");return;case'\n':builder.Append("\\n");
+return;case'\r':builder.Append("\\r");return;case'\0':builder.Append("\\0");return;case'\f':builder.Append("\\f");return;case'\v':builder.Append("\\v");
+return;case'\b':builder.Append("\\b");return;default:var s=char.ConvertFromUtf32(rangeChar);if(!char.IsLetterOrDigit(s,0)&&!char.IsSeparator(s,0)&&!char.IsPunctuation(s,
+0)&&!char.IsSymbol(s,0)){if(s.Length==1){builder.Append("\\u");builder.Append(unchecked((ushort)rangeChar).ToString("x4"));}else{builder.Append("\\U");
+builder.Append(rangeChar.ToString("x8"));}}else builder.Append(s);break;}}static string _EscapeLabel(string label){if(string.IsNullOrEmpty(label))return
+ label;string result=label.Replace("\\",@"\\");result=result.Replace("\"","\\\"");result=result.Replace("\n","\\n");result=result.Replace("\r","\\r");
 result=result.Replace("\0","\\0");result=result.Replace("\v","\\v");result=result.Replace("\t","\\t");result=result.Replace("\f","\\f");return result;
-}}}namespace F{partial class FA{public static int Lex(DfaEntry[]dfaTable,IEnumerator<int>input,StringBuilder capture){var state=0;while(input.MoveNext())
-{var next=FA.Move(dfaTable,state,input.Current);if(-1==next){return dfaTable[state].AcceptSymbolId;}capture.Append(char.ConvertFromUtf32(input.Current));
-state=next;}return dfaTable[state].AcceptSymbolId;}public int Lex(IEnumerator<int>input,StringBuilder capture){var states=FillEpsilonClosure();while(input.MoveNext())
-{var next=FA.FillMove(states,input.Current);if(0==next.Count){foreach(var state in states){if(state.IsAccepting)return state.AcceptSymbol;}return-1;}capture.Append(char.ConvertFromUtf32(input.Current));
-states=next;}foreach(var state in states){if(state.IsAccepting)return state.AcceptSymbol;}return-1;}}}namespace F{partial class FA{public static FA Parse(IEnumerable<char>
-input,int accept=-1,int line=1,int column=1,long position=0,string fileOrUrl=null){var lc=LexContext.Create(input);lc.EnsureStarted();lc.SetLocation(line,
-column,position,fileOrUrl);return Parse(lc,accept);}internal static FA Parse(LexContext pc,int accept=-1){FA result=null,next=null;int ich;pc.EnsureStarted();
-while(true){switch(pc.Current){case-1:
-#if MINIMIZE
-result=result.ToDfa();result.TrimDuplicates();
-#endif
-return result;case'.':var dot=FA.Set(new int[]{0,0x10ffff},accept);if(null==result)result=dot;else{result=FA.Concat(new FA[]{result,dot},accept);}pc.Advance();
-result=_ParseModifier(result,pc,accept);break;case'\\':pc.Advance();pc.Expecting();var isNot=false;switch(pc.Current){case'P':isNot=true;goto case'p';
-case'p':pc.Advance();pc.Expecting('{');var uc=new StringBuilder();int uli=pc.Line;int uco=pc.Column;long upo=pc.Position;while(-1!=pc.Advance()&&'}'!=
-pc.Current)uc.Append((char)pc.Current);pc.Expecting('}');pc.Advance();int uci=0;switch(uc.ToString()){case"Pe":uci=21;break;case"Pc":uci=19;break;case
-"Cc":uci=14;break;case"Sc":uci=26;break;case"Pd":uci=19;break;case"Nd":uci=8;break;case"Me":uci=7;break;case"Pf":uci=23;break;case"Cf":uci=15;break;case
-"Pi":uci=22;break;case"Nl":uci=9;break;case"Zl":uci=12;break;case"Ll":uci=1;break;case"Sm":uci=25;break;case"Lm":uci=3;break;case"Sk":uci=27;break;case
-"Mn":uci=5;break;case"Ps":uci=20;break;case"Lo":uci=4;break;case"Cn":uci=29;break;case"No":uci=10;break;case"Po":uci=24;break;case"So":uci=28;break;case
-"Zp":uci=13;break;case"Co":uci=17;break;case"Zs":uci=11;break;case"Mc":uci=6;break;case"Cs":uci=16;break;case"Lt":uci=2;break;case"Lu":uci=0;break;}if(isNot)
-{next=FA.Set(CharacterClasses.UnicodeCategories[uci],accept);}else next=FA.Set(CharacterClasses.NotUnicodeCategories[uci],accept);break;case'd':next=FA.Set(CharacterClasses.digit,
-accept);pc.Advance();break;case'D':next=FA.Set(RangeUtility.NotRanges(CharacterClasses.digit),accept);pc.Advance();break;case's':next=FA.Set(CharacterClasses.space,accept);
-pc.Advance();break;case'S':next=FA.Set(RangeUtility.NotRanges(CharacterClasses.space),accept);pc.Advance();break;case'w':next=FA.Set(CharacterClasses.word,accept);
-pc.Advance();break;case'W':next=FA.Set(RangeUtility.NotRanges(CharacterClasses.word),accept);pc.Advance();break;default:if(-1!=(ich=_ParseEscapePart(pc)))
-{next=FA.Literal(new int[]{ich},accept);}else{pc.Expecting(); return null;}break;}next=_ParseModifier(next,pc,accept);if(null!=result){result=FA.Concat(new
- FA[]{result,next},accept);}else result=next;break;case')':
-#if MINIMIZE
-result=result.ToDfa();result.TrimDuplicates();
-#endif
-return result;case'(':pc.Advance();pc.Expecting();next=Parse(pc,accept);pc.Expecting(')');pc.Advance();next=_ParseModifier(next,pc,accept);if(null==result)
-result=next;else{result=FA.Concat(new FA[]{result,next},accept);}break;case'|':if(-1!=pc.Advance()){next=Parse(pc,accept);result=FA.Or(new FA[]{result,
-next},accept);}else{result=FA.Optional(result,accept);}break;case'[':var seti=_ParseSet(pc);var set=seti.Value;if(seti.Key)set=RangeUtility.NotRanges(set);
-next=FA.Set(set,accept);next=_ParseModifier(next,pc,accept);if(null==result)result=next;else{result=FA.Concat(new FA[]{result,next},accept);}break;default:
-ich=pc.Current;if(char.IsHighSurrogate((char)ich)){if(-1==pc.Advance())throw new ExpectingException("Expecting low surrogate in Unicode stream",pc.Line,
-pc.Column,pc.Position,pc.FileOrUrl,"low-surrogate");ich=char.ConvertToUtf32((char)ich,(char)pc.Current);}next=FA.Literal(new int[]{ich},accept);pc.Advance();
-next=_ParseModifier(next,pc,accept);if(null==result)result=next;else{result=FA.Concat(new FA[]{result,next},accept);}break;}}}static KeyValuePair<bool,
-int[]>_ParseSet(LexContext pc){var result=new List<int>();pc.EnsureStarted();pc.Expecting('[');pc.Advance();pc.Expecting();var isNot=false;if('^'==pc.Current)
-{isNot=true;pc.Advance();pc.Expecting();}var firstRead=true;int firstChar='\0';var readFirstChar=false;var wantRange=false;while(-1!=pc.Current&&(firstRead
-||']'!=pc.Current)){if(!wantRange){ if('['==pc.Current){pc.Advance();pc.Expecting();if(':'!=pc.Current){firstChar='[';readFirstChar=true;}else{pc.Advance();
-pc.Expecting();var ll=pc.CaptureBuffer.Length;if(!pc.TryReadUntil(':',false))throw new ExpectingException("Expecting character class",pc.Line,pc.Column,
-pc.Position,pc.FileOrUrl);pc.Expecting(':');pc.Advance();pc.Expecting(']');pc.Advance();var cls=pc.GetCapture(ll);int[]ranges;if(!CharacterClasses.Known.TryGetValue(cls,
-out ranges))throw new ExpectingException("Unknown character class \""+cls+"\" specified",pc.Line,pc.Column,pc.Position,pc.FileOrUrl);result.AddRange(ranges);
-readFirstChar=false;wantRange=false;firstRead=false;continue;}}if(!readFirstChar){if(char.IsHighSurrogate((char)pc.Current)){var chh=(char)pc.Current;
-pc.Advance();pc.Expecting();firstChar=char.ConvertToUtf32(chh,(char)pc.Current);pc.Advance();pc.Expecting();}else if('\\'==pc.Current){pc.Advance();firstChar
-=_ParseRangeEscapePart(pc);}else{firstChar=pc.Current;pc.Advance();pc.Expecting();}readFirstChar=true;}else{if('-'==pc.Current){pc.Advance();pc.Expecting();
-wantRange=true;}else{result.Add(firstChar);result.Add(firstChar);readFirstChar=false;}}firstRead=false;}else{if('\\'!=pc.Current){var ch=0;if(char.IsHighSurrogate((char)pc.Current))
-{var chh=(char)pc.Current;pc.Advance();pc.Expecting();ch=char.ConvertToUtf32(chh,(char)pc.Current);}else ch=(char)pc.Current;pc.Advance();pc.Expecting();
-result.Add(firstChar);result.Add(ch);}else{result.Add(firstChar);pc.Advance();result.Add(_ParseRangeEscapePart(pc));}wantRange=false;readFirstChar=false;
-}}if(readFirstChar){result.Add(firstChar);result.Add(firstChar);if(wantRange){result.Add('-');result.Add('-');}}pc.Expecting(']');pc.Advance();return new
- KeyValuePair<bool,int[]>(isNot,result.ToArray());}static int[]_ParseRanges(LexContext pc){pc.EnsureStarted();var result=new List<int>();int[]next=null;
-bool readDash=false;while(-1!=pc.Current&&']'!=pc.Current){switch(pc.Current){case'[': if(null!=next){result.Add(next[0]);result.Add(next[1]);if(readDash)
-{result.Add('-');result.Add('-');}}pc.Advance();pc.Expecting(':');pc.Advance();var l=pc.CaptureBuffer.Length;var lin=pc.Line;var col=pc.Column;var pos
-=pc.Position;pc.TryReadUntil(':',false);var n=pc.GetCapture(l);pc.Advance();pc.Expecting(']');pc.Advance();int[]rngs;if(!CharacterClasses.Known.TryGetValue(n,
-out rngs)){var sa=new string[CharacterClasses.Known.Count];CharacterClasses.Known.Keys.CopyTo(sa,0);throw new ExpectingException("Invalid character class "
-+n,lin,col,pos,pc.FileOrUrl,sa);}result.AddRange(rngs);readDash=false;next=null;break;case'\\':pc.Advance();pc.Expecting();switch(pc.Current){case'h':
-_ParseCharClassEscape(pc,"space",result,ref next,ref readDash);break;case'd':_ParseCharClassEscape(pc,"digit",result,ref next,ref readDash);break;case
-'D':_ParseCharClassEscape(pc,"^digit",result,ref next,ref readDash);break;case'l':_ParseCharClassEscape(pc,"lower",result,ref next,ref readDash);break;
-case's':_ParseCharClassEscape(pc,"space",result,ref next,ref readDash);break;case'S':_ParseCharClassEscape(pc,"^space",result,ref next,ref readDash);break;
-case'u':_ParseCharClassEscape(pc,"upper",result,ref next,ref readDash);break;case'w':_ParseCharClassEscape(pc,"word",result,ref next,ref readDash);break;
-case'W':_ParseCharClassEscape(pc,"^word",result,ref next,ref readDash);break;default:var ch=(char)_ParseRangeEscapePart(pc);if(null==next)next=new int[]
-{ch,ch};else if(readDash){result.Add(next[0]);result.Add(ch);next=null;readDash=false;}else{result.AddRange(next);next=new int[]{ch,ch};}break;}break;
-case'-':pc.Advance();if(null==next){next=new int[]{'-','-'};readDash=false;}else{if(readDash)result.AddRange(next);readDash=true;}break;default:if(null
-==next){next=new int[]{pc.Current,pc.Current};}else{if(readDash){result.Add(next[0]);result.Add((char)pc.Current);next=null;readDash=false;}else{result.AddRange(next);
-next=new int[]{pc.Current,pc.Current};}}pc.Advance();break;}}if(null!=next){result.AddRange(next);if(readDash){result.Add('-');result.Add('-');}}return
- result.ToArray();}static void _ParseCharClassEscape(LexContext pc,string cls,List<int>result,ref int[]next,ref bool readDash){if(null!=next){result.AddRange(next);
-if(readDash){result.Add('-');result.Add('-');}result.Add('-');result.Add('-');}pc.Advance();int[]rngs;if(!CharacterClasses.Known.TryGetValue(cls,out rngs))
-{var sa=new string[CharacterClasses.Known.Count];CharacterClasses.Known.Keys.CopyTo(sa,0);throw new ExpectingException("Invalid character class "+cls,
-pc.Line,pc.Column,pc.Position,pc.FileOrUrl,sa);}result.AddRange(rngs);next=null;readDash=false;}static FA _ParseModifier(FA expr,LexContext pc,int accept)
-{var line=pc.Line;var column=pc.Column;var position=pc.Position;switch(pc.Current){case'*':expr=Repeat(expr,0,0,accept);pc.Advance();break;case'+':expr
-=Repeat(expr,1,0,accept);pc.Advance();break;case'?':expr=Optional(expr,accept);pc.Advance();break;case'{':pc.Advance();pc.TrySkipWhiteSpace();pc.Expecting('0',
-'1','2','3','4','5','6','7','8','9',',','}');var min=-1;var max=-1;if(','!=pc.Current&&'}'!=pc.Current){var l=pc.CaptureBuffer.Length;pc.TryReadDigits();
-min=int.Parse(pc.GetCapture(l));pc.TrySkipWhiteSpace();}if(','==pc.Current){pc.Advance();pc.TrySkipWhiteSpace();pc.Expecting('0','1','2','3','4','5','6',
-'7','8','9','}');if('}'!=pc.Current){var l=pc.CaptureBuffer.Length;pc.TryReadDigits();max=int.Parse(pc.GetCapture(l));pc.TrySkipWhiteSpace();}}else{max
-=min;}pc.Expecting('}');pc.Advance();expr=Repeat(expr,min,max,accept);break;}return expr;}static byte _FromHexChar(char hex){if(':'>hex&&'/'<hex)return
-(byte)(hex-'0');if('G'>hex&&'@'<hex)return(byte)(hex-'7'); if('g'>hex&&'`'<hex)return(byte)(hex-'W'); throw new ArgumentException("The value was not hex.",
-"hex");}static bool _IsHexChar(char hex){if(':'>hex&&'/'<hex)return true;if('G'>hex&&'@'<hex)return true;if('g'>hex&&'`'<hex)return true;return false;
-} static int _ParseEscapePart(LexContext pc){if(-1==pc.Current)return-1;switch(pc.Current){case'f':pc.Advance();return'\f';case'v':pc.Advance();return
-'\v';case't':pc.Advance();return'\t';case'n':pc.Advance();return'\n';case'r':pc.Advance();return'\r';case'x':if(-1==pc.Advance()||!_IsHexChar((char)pc.Current))
-return'x';byte b=_FromHexChar((char)pc.Current);if(-1==pc.Advance()||!_IsHexChar((char)pc.Current))return unchecked((char)b);b<<=4;b|=_FromHexChar((char)pc.Current);
-if(-1==pc.Advance()||!_IsHexChar((char)pc.Current))return unchecked((char)b);b<<=4;b|=_FromHexChar((char)pc.Current);if(-1==pc.Advance()||!_IsHexChar((char)pc.Current))
-return unchecked((char)b);b<<=4;b|=_FromHexChar((char)pc.Current);return unchecked((char)b);case'u':if(-1==pc.Advance())return'u';ushort u=_FromHexChar((char)pc.Current);
-u<<=4;if(-1==pc.Advance())return unchecked((char)u);u|=_FromHexChar((char)pc.Current);u<<=4;if(-1==pc.Advance())return unchecked((char)u);u|=_FromHexChar((char)pc.Current);
-u<<=4;if(-1==pc.Advance())return unchecked((char)u);u|=_FromHexChar((char)pc.Current);return unchecked((char)u);default:int i=pc.Current;pc.Advance();
-if(char.IsHighSurrogate((char)i)){i=char.ConvertToUtf32((char)i,(char)pc.Current);pc.Advance();}return(char)i;}}static int _ParseRangeEscapePart(LexContext
- pc){if(-1==pc.Current)return-1;switch(pc.Current){case'f':pc.Advance();return'\f';case'v':pc.Advance();return'\v';case't':pc.Advance();return'\t';case
-'n':pc.Advance();return'\n';case'r':pc.Advance();return'\r';case'x':if(-1==pc.Advance()||!_IsHexChar((char)pc.Current))return'x';byte b=_FromHexChar((char)pc.Current);
-if(-1==pc.Advance()||!_IsHexChar((char)pc.Current))return unchecked((char)b);b<<=4;b|=_FromHexChar((char)pc.Current);if(-1==pc.Advance()||!_IsHexChar((char)pc.Current))
-return unchecked((char)b);b<<=4;b|=_FromHexChar((char)pc.Current);if(-1==pc.Advance()||!_IsHexChar((char)pc.Current))return unchecked((char)b);b<<=4;b
-|=_FromHexChar((char)pc.Current);return unchecked((char)b);case'u':if(-1==pc.Advance())return'u';ushort u=_FromHexChar((char)pc.Current);u<<=4;if(-1==
-pc.Advance())return unchecked((char)u);u|=_FromHexChar((char)pc.Current);u<<=4;if(-1==pc.Advance())return unchecked((char)u);u|=_FromHexChar((char)pc.Current);
-u<<=4;if(-1==pc.Advance())return unchecked((char)u);u|=_FromHexChar((char)pc.Current);return unchecked((char)u);default:int i=pc.Current;pc.Advance();
-if(char.IsHighSurrogate((char)i)){i=char.ConvertToUtf32((char)i,(char)pc.Current);pc.Advance();}return(char)i;}}}}namespace F{partial class FA{/// <summary>
-/// Performs powerset construction on this NFA to transform it into an equivelent DFA
-/// </summary>
-/// <param name="progress">The progress of the operation</param>
-/// <returns>A new FSM that is deterministic</returns>
-public FA ToDfa(IProgress<FAProgress>progress=null){return _Determinize(this,progress);}public static FA _Determinize(FA fa,IProgress<FAProgress>progress
-=null){if(null!=progress)progress.Report(new FAProgress(FAStatus.DfaTransform,0));var p=new HashSet<int>();var closure=new List<FA>();fa.FillClosure(closure);
-for(int ic=closure.Count,i=0;i<ic;++i){var ffa=closure[i];p.Add(0);foreach(var t in ffa.InputTransitions){p.Add(t.Key.Key);if(t.Key.Value<0x10ffff){p.Add((t.Key.Value
-+1));}}}var points=new int[p.Count];p.CopyTo(points,0);Array.Sort(points);var comparer=_SetComparer.Default;var sets=new Dictionary<ICollection<FA>,ICollection<FA>>(comparer);
-var working=new Queue<ICollection<FA>>();var dfaMap=new Dictionary<ICollection<FA>,FA>(comparer);var initial=fa.FillEpsilonClosure();sets.Add(initial,
-initial);working.Enqueue(initial);var result=new FA();foreach(var afa in initial){if(afa.IsAccepting){result.IsAccepting=true;result.AcceptSymbol=afa.AcceptSymbol;
-break;}}dfaMap.Add(initial,result);var j=1;while(working.Count>0){ICollection<FA>s=working.Dequeue();var ecs=FillEpsilonClosure(s);FA dfa;dfaMap.TryGetValue(s,
-out dfa);foreach(FA q in ecs){if(q.IsAccepting){dfa.IsAccepting=true;dfa.AcceptSymbol=q.AcceptSymbol;break;}}for(var i=0;i<points.Length;i++){var set=
-new HashSet<FA>();foreach(FA c in ecs){foreach(var trns in c.InputTransitions){if(trns.Key.Key<=points[i]&&points[i]<=trns.Key.Value){foreach(var efa in
- trns.Value.FillEpsilonClosure())set.Add(trns.Value);}}}if(!sets.ContainsKey(set)){sets.Add(set,set);working.Enqueue(set);dfaMap.Add(set,new FA());}FA
- dst;dfaMap.TryGetValue(set,out dst);int first=points[i];int last;if(i+1<points.Length)last=(points[i+1]-1);else last=0x10ffff;dfa.InputTransitions.Add(new
- KeyValuePair<int,int>(first,last),dst);}if(null!=progress)progress.Report(new FAProgress(FAStatus.DfaTransform,j));++j;} foreach(var ffa in result.FillClosure())
-{var itrns=new List<KeyValuePair<KeyValuePair<int,int>,FA>>(ffa.InputTransitions);foreach(var trns in itrns){if(null==trns.Value.FirstAcceptingState){
-ffa.InputTransitions.Remove(trns.Key);}}if(null!=progress)progress.Report(new FAProgress(FAStatus.DfaTransform,j));++j;}return result;}}}namespace F{/// <summary>
-/// Represents the current status of the operation
-/// </summary>
-#if FALIB
-public
-#endif
-enum FAStatus{/// <summary>
-/// The status is unknown
-/// </summary>
-Unknown,/// <summary>
-/// Performing a DFA transform
-/// </summary>
-DfaTransform,/// <summary>
-/// Trimming duplicate states
-/// </summary>
-TrimDuplicates}/// <summary>
-/// Represents the progress of the operation
-/// </summary>
-#if FALIB
-public
-#endif
-struct FAProgress{/// <summary>
-/// Constructs a new instance of the progress class with the specified status and count
-/// </summary>
-/// <param name="status">The status</param>
-/// <param name="count">The count of values in the progress</param>
-public FAProgress(FAStatus status,int count){Status=status;Count=count;}/// <summary>
-/// The status
-/// </summary>
-public FAStatus Status{get;}/// <summary>
-/// The count of values in the progress.
-/// </summary>
-public int Count{get;}}}namespace F{internal sealed class ListEqualityComparer<T>:IEqualityComparer<List<T>>,IEquatable<ListEqualityComparer<T>>{/// <summary>
-/// Implements the operator ==.
-/// </summary>
-/// <param name="left">The left.</param>
-/// <param name="right">The right.</param>
-/// <returns>
-/// The result of the operator.
-/// </returns>
-public static bool operator==(ListEqualityComparer<T>left,ListEqualityComparer<T>right){return object.Equals(left,right);}/// <summary>
-/// Implements the operator !=.
-/// </summary>
-/// <param name="left">The left.</param>
-/// <param name="right">The right.</param>
-/// <returns>
-/// The result of the operator.
-/// </returns>
-public static bool operator!=(ListEqualityComparer<T>left,ListEqualityComparer<T>right){return!object.Equals(left,right);}/// <inheritdoc />
-public bool Equals(List<T>x,List<T>y){if(x.Count!=y.Count){return false;}return x.SequenceEqual(y);}/// <inheritdoc />
-public int GetHashCode(List<T>obj){ return obj.Aggregate(17,(current,item)=>(current*31)+item.GetHashCode());}/// <inheritdoc />
-public bool Equals(ListEqualityComparer<T>other){return!object.ReferenceEquals(null,other);}/// <inheritdoc />
-public override bool Equals(object obj){if(object.ReferenceEquals(null,obj)){return false;}if(object.ReferenceEquals(this,obj)){return true;}if(obj.GetType()
-!=typeof(ListEqualityComparer<T>)){return false;}return this.Equals((ListEqualityComparer<T>)obj);}/// <inheritdoc />
-public override int GetHashCode(){return base.GetHashCode();}}}namespace F{
-#if FALIB
-public
-#endif
-static class RangeUtility{public static bool Intersects(int[]x,int[]y){if(null==x||null==y)return false;if(x==y)return true;for(var i=0;i<x.Length;i+=2)
-{for(var j=0;j<y.Length;j+=2){if(Intersects(x[i],x[i+1],y[j],y[j+1]))return true;if(x[i]>y[j+1])return false;}}return false;}public static bool Intersects(int
- xf,int xl,int yf,int yl){return(xf>=yf&&xf<=yl)||(xl>=yf&&xl<=yl);}public static bool Intersects(KeyValuePair<int,int>x,KeyValuePair<int,int>y){return
-(x.Key>=y.Key&&x.Key<=y.Value)||(x.Value>=y.Key&&x.Value<=y.Value)||(y.Key>=x.Key&&y.Key<=x.Value)||(y.Value>=x.Key&&y.Value<=x.Value);}public static KeyValuePair<int,int>[]
-ToPairs(int[]packedRanges){var result=new KeyValuePair<int,int>[packedRanges.Length/2];for(var i=0;i<result.Length;++i){var j=i*2;result[i]=new KeyValuePair<int,
-int>(packedRanges[j],packedRanges[j+1]);}return result;}public static int[]FromPairs(IList<KeyValuePair<int,int>>pairs){var result=new int[pairs.Count
-*2];for(int ic=pairs.Count,i=0;i<ic;++i){var pair=pairs[i];var j=i*2;result[j]=pair.Key;result[j+1]=pair.Value;}return result;}public static void NormalizeRangeArray(int[]
-packedRanges){var pairs=ToPairs(packedRanges);Array.Sort(pairs,(x,y)=>{return x.Key.CompareTo(y.Key);});NormalizeSortedRangeList(pairs);for(var i=0;i<pairs.Length;++i)
-{var j=i*2;packedRanges[j]=pairs[i].Key;packedRanges[j+1]=pairs[i].Value;}}public static void NormalizeSortedRangeList(IList<KeyValuePair<int,int>>pairs)
-{var or=default(KeyValuePair<int,int>);for(int i=1;i<pairs.Count;++i){if(pairs[i-1].Value+1>=pairs[i].Key){var nr=new KeyValuePair<int,int>(pairs[i-1].Key,
-pairs[i].Value);pairs[i-1]=or=nr;pairs.RemoveAt(i);--i;}}}public static KeyValuePair<int,int>[]Subtract(KeyValuePair<int,int>x,KeyValuePair<int,int>y)
-{if(!Intersects(x,y))return new KeyValuePair<int,int>[]{x};if(y.Key<=x.Key&&y.Value>=x.Value)return new KeyValuePair<int,int>[0];if(y.Key<=x.Key){return
- new KeyValuePair<int,int>[]{new KeyValuePair<int,int>(y.Value+1,x.Value)};}if(y.Value>=x.Value)return new KeyValuePair<int,int>[]{new KeyValuePair<int,
-int>(x.Key,y.Key-1)};return new KeyValuePair<int,int>[]{new KeyValuePair<int,int>(x.Key,y.Key-1),new KeyValuePair<int,int>(y.Value+1,x.Value)};}public
- static KeyValuePair<int,int>[]Subtract(IEnumerable<KeyValuePair<int,int>>ranges,KeyValuePair<int,int>range){var result=new List<KeyValuePair<int,int>>();
-foreach(var x in ranges){result.AddRange(Subtract(x,range));}return result.ToArray();}public static int[]NotRanges(int[]ranges){return FromPairs(new List<KeyValuePair<int,
-int>>(NotRanges(ToPairs(ranges))));}public static IEnumerable<KeyValuePair<int,int>>NotRanges(IEnumerable<KeyValuePair<int,int>>ranges){ var last=0x10ffff;
-using(var e=ranges.GetEnumerator()){if(!e.MoveNext()){yield return new KeyValuePair<int,int>(0x0,0x10ffff);yield break;}if(e.Current.Key>0){yield return
- new KeyValuePair<int,int>(0,unchecked(e.Current.Key-1));last=e.Current.Value;if(0x10ffff<=last)yield break;}while(e.MoveNext()){if(0x10ffff<=last)yield
- break;if(unchecked(last+1)<e.Current.Key)yield return new KeyValuePair<int,int>(unchecked(last+1),unchecked((e.Current.Key-1)));last=e.Current.Value;
-}if(0x10ffff>last)yield return new KeyValuePair<int,int>(unchecked((last+1)),0x10ffff);}}public static int[]GetRanges(IEnumerable<int>sortedChars){var
- result=new List<int>();int first;int last;using(var e=sortedChars.GetEnumerator()){bool moved=e.MoveNext();while(moved){first=last=e.Current;while((moved
-=e.MoveNext())&&(e.Current==last||e.Current==last+1)){last=e.Current;}result.Add(first);result.Add(last);}}return result.ToArray();}public static string
- ToString(KeyValuePair<int,int>range){var sb=new StringBuilder();_AppendRangeTo(sb,new int[]{range.Key,range.Value},0);return sb.ToString();}public static
- string ToString(IEnumerable<KeyValuePair<int,int>>ranges){var sb=new StringBuilder();foreach(var range in ranges)_AppendRangeTo(sb,new int[]{range.Key,
-range.Value},0);return sb.ToString();}static void _AppendRangeTo(StringBuilder builder,int[]ranges,int index){_AppendRangeCharTo(builder,ranges[index]);
-if(0==ranges[index+1].CompareTo(ranges[index]))return;if(ranges[index+1]==ranges[index]+1){_AppendRangeCharTo(builder,ranges[index+1]);return;}builder.Append('-');
-_AppendRangeCharTo(builder,ranges[index+1]);}static void _AppendRangeCharTo(StringBuilder builder,int rangeChar){switch(rangeChar){case'-':case'\\':builder.Append('\\');
-builder.Append(char.ConvertFromUtf32(rangeChar));return;case'\t':builder.Append("\\t");return;case'\n':builder.Append("\\n");return;case'\r':builder.Append("\\r");
-return;case'\0':builder.Append("\\0");return;case'\f':builder.Append("\\f");return;case'\v':builder.Append("\\v");return;case'\b':builder.Append("\\b");
-return;default:var s=char.ConvertFromUtf32(rangeChar);if(!char.IsLetterOrDigit(s,0)&&!char.IsSeparator(s,0)&&!char.IsPunctuation(s,0)&&!char.IsSymbol(s,
-0)){if(s.Length==1){builder.Append("\\u");builder.Append(unchecked((ushort)rangeChar).ToString("x4"));}else{builder.Append("\\U");rangeChar.ToString("x8");
-}}else builder.Append(s);break;}}}}namespace F{/// <summary>
-/// Represents a single token returned from the <see cref="Tokenizer"/>'s <see cref="TokenEnumerator"/>
-/// A token contains the symbol, the value, and the location information for each lexeme returned from a lexer/tokenizer
-/// </summary>
-#if FALIB
-public
-#endif
-struct Token{public int SymbolId{get;internal set;}public int Line{get;internal set;}public int Column{get;internal set;}public long Position{get;internal
- set;}public int Length{get;internal set;}public string Value{get;internal set;}}}namespace F{/// <summary>
-/// The tokenizer breaks input into lexical units that can be fed to a parser. Abstractly, they are essentially
-/// a series of regular expressions, each one tagged to a symbol. As the input is scanned, the tokenizer reports
-/// the symbol for each matched chunk, along with the matching value and location information. It's a regex runner.
-/// </summary>
-/// <remarks>The heavy lifting here is done by the <see cref="TokenEnumerator"/> class. This just provides a for-each interface over the tokenization process.</remarks>
-#if FALIB
-public
-#endif
-class Tokenizer:IEnumerable<Token>{FA _lexer;IEnumerable<char>_input;bool _reportEndToken;public Tokenizer(FA lexer,IEnumerable<char>input,bool reportEndToken=false)
-{_lexer=lexer;_input=input;_reportEndToken=reportEndToken;}public IEnumerator<Token>GetEnumerator()=>new TokenEnumerator(_lexer,_input,_reportEndToken);
-IEnumerator IEnumerable.GetEnumerator()=>GetEnumerator();}/// <summary>
-/// The token enumerator is the core of the lexing engine. It uses a composite FA macine to match text against one of several "regular expression" patterns.
-/// </summary>
-class TokenEnumerator:IEnumerator<Token>{ IEnumerator<char>_input; long _position;int _line;int _column;bool _reportEndToken; int _state; Token _token;
- ICollection<FA>_initialStates; FA _lexer; StringBuilder _buffer;public TokenEnumerator(FA lexer,IEnumerable<char>@string,bool reportEndToken){_lexer=
-lexer;_input=@string.GetEnumerator();_buffer=new StringBuilder();_reportEndToken=reportEndToken;_initialStates=_lexer.FillEpsilonClosure();Reset();}public
- Token Current{get{return _token;}}object IEnumerator.Current=>Current;public void Dispose(){_state=-3;_input.Dispose();}public bool MoveNext(){switch(_state)
-{case-3:throw new ObjectDisposedException(GetType().FullName);case-2:if(-2!=_token.SymbolId){_state=-2;goto case 0;}return false;case-1:case 0:_token=
-new Token(); _token.Column=_column;_token.Line=_line;_token.Position=_position; _token.SymbolId=_Lex();if(-2==_token.SymbolId&&!_reportEndToken){_state
-=-2; return false;} _token.Value=_buffer.ToString();_token.Length=_buffer.Length;return true;default:return false;}}/// <summary>
-/// This is where the work happens
-/// </summary>
-/// <returns>The symbol that was matched. members _state _line,_column,_position,_buffer and _input are also modified.</returns>
-int _Lex(){int acc;var states=_initialStates;_buffer.Clear();switch(_state){case-1: if(!_MoveNextInput()){_state=-2;acc=_GetAcceptingSymbol(states);if
-(-1<acc)return acc;else return-1;}_state=0; break;case-2: return-2;} while(true){var next=FA.FillMove(states,_input.Current);if(0==next.Count) break;_buffer.Append(_input.Current);
-states=next;if(!_MoveNextInput()){ _state=-2;acc=_GetAcceptingSymbol(states);if(-1<acc) return acc;else return-1;}}acc=_GetAcceptingSymbol(states);if(-1<
-acc) return acc;else{ _buffer.Append(_input.Current);if(!_MoveNextInput())_state=-2;return-1;}}/// <summary>
-/// Advances the input, and tracks location information
-/// </summary>
-/// <returns>True if the underlying MoveNext returned true, otherwise false.</returns>
-bool _MoveNextInput(){if(_input.MoveNext()){if(-1!=_state){++_position;if('\n'==_input.Current){_column=1;++_line;}else++_column;}return true;}else if
-(0==_state){++_position;++_column;}return false;}/// <summary>
-/// Finds if any of our states has an accept symbol and if so, returns it
-/// </summary>
-/// <param name="states">The states to check</param>
-/// <returns>The first symbol found or -1 if none were found</returns>
-static int _GetAcceptingSymbol(IEnumerable<FA>states){foreach(var fa in states)if(fa.IsAccepting)return fa.AcceptSymbol;return-1;}public void Reset(){
-_input.Reset();_state=-1;_line=1;_column=1;_position=0;}}}namespace F{
-#if FALIB
-public
-#endif
-static class UnicodeUtility{public static IEnumerable<int>ToUtf32(IEnumerable<char>@string){int chh=-1;foreach(var ch in@string){if(char.IsHighSurrogate(ch))
-{chh=ch;continue;}else chh=-1;if(-1!=chh){if(!char.IsLowSurrogate(ch))throw new IOException("Unterminated Unicode surrogate pair found in string.");yield
- return char.ConvertToUtf32(unchecked((char)chh),ch);chh=-1;continue;}yield return ch;}}}}
+}}}

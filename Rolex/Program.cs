@@ -179,30 +179,11 @@ namespace Rolex
 						{
 							fa.RenderToFile(nfagraph);
 						}
-						if (!prototype)
-						{
-							fa = fa.ToDfa(new ConsoleProgress(stderr));
-							fa.TrimDuplicates(new ConsoleProgress(stderr));
-							if (null != dfagraph)
-							{
-								fa.RenderToFile(dfagraph);
-							}
-						}
-						else
-						{
-							fa.TrimNeutrals();
-						}
+						
+						fa = fa.ToDfa();
 						DfaEntry[] dfaTable = null;
-						NfaEntry[] nfaTable = null;
-						if (!prototype)
-						{
-							dfaTable = fa.ToDfaStateTable(symids);
-						}
-						else
-						{
-							nfaTable = _ToNfaStateTable(fa, symids);
-						}
-						if (!noshared && !prototype)
+						dfaTable = _ToDfaStateTable(fa,symids);
+						if (!noshared)
 						{
 							// import our Export/Token.cs into the library
 							_ImportCompileUnit(Deslanged.Token, cns);
@@ -244,17 +225,9 @@ namespace Rolex
 
 						});
 						CodeMemberField f = null;
-						if (prototype)
-						{
-							f = CodeDomUtility.GetByName("NfaTable", td.Members) as CodeMemberField;
-							f.InitExpression = CodeGenerator.GenerateNfaTableInitializer(nfaTable);
-						}
-						else
-						{
-							f = CodeDomUtility.GetByName("DfaTable", td.Members) as CodeMemberField;
-							f.InitExpression = CodeGenerator.GenerateDfaTableInitializer(dfaTable);
-
-						}
+						
+						f = CodeDomUtility.GetByName("DfaTable", td.Members) as CodeMemberField;
+						f.InitExpression = CodeGenerator.GenerateDfaTableInitializer(dfaTable);
 
 						f = CodeDomUtility.GetByName("NodeFlags", td.Members) as CodeMemberField;
 						f.InitExpression = CodeDomUtility.Literal(nodeFlags);
@@ -470,50 +443,38 @@ namespace Rolex
 			}
 			return result;
 		}
-		static FA _BuildLexer(IList<LexRule> rules, bool ignoreCase,string inputFile)
+		static FFA _BuildLexer(IList<LexRule> rules, bool ignoreCase,string inputFile)
 		{
-			var exprs = new FA[rules.Count];
-			var result = new FA();
+			var exprs = new FFA[rules.Count];
+			var result = new FFA();
 			for (var i = 0; i < exprs.Length; ++i)
 			{
 				var rule = rules[i];
 
-				var fa = FA.Parse(rule.Expression.Substring(1, rule.Expression.Length - 2), rule.Id, rule.ExpressionLine, rule.ExpressionColumn, rule.ExpressionPosition, inputFile);
+				var fa = FFA.Parse(rule.Expression.Substring(1, rule.Expression.Length - 2), rule.Id, rule.ExpressionLine, rule.ExpressionColumn, rule.ExpressionPosition, inputFile);
+				if (0 > rule.Id)
+					System.Diagnostics.Debugger.Break();
 				if (!ignoreCase)
 				{
 					var ic = (bool)rule.GetAttribute("ignoreCase", false);
 					if (ic)
-						fa = FA.CaseInsensitive(fa, rule.Id);
+						fa = FFA.CaseInsensitive(fa, rule.Id);
 				}
 				else
 				{
 					var ic = (bool)rule.GetAttribute("ignoreCase", true);
 					if (ic)
-						fa = FA.CaseInsensitive(fa, rule.Id);
+						fa = FFA.CaseInsensitive(fa, rule.Id);
 				}
-#if DEBUG
-				var fas = fa.FirstAcceptingState;
-				if (null != fas)
-				{
-					System.Diagnostics.Debug.Assert(-1 < fas.AcceptSymbol, "Illegal accept symbol " + fas.AcceptSymbol.ToString() + " was found on expression " + i.ToString());
-				}
-#endif
 
-				result.EpsilonTransitions.Add(fa);
-			}
-			result.TrimNeutrals();
-			if (result.IsNeutral)
-			{
-				foreach (var efa in result.EpsilonTransitions)
-					result = efa;
+
+				result.AddEpsilon(fa);
 			}
 			return result;
 		}
-		
-		static NfaEntry[] _ToNfaStateTable(FA fa, IList<int> symbolTable = null)
+		static DfaEntry[] _ToDfaStateTable(FFA dfa, IList<int> symbolTable = null)
 		{
-			var closure = new List<FA>();
-			fa.FillClosure(closure);
+			var closure = dfa.FillClosure();
 			var symbolLookup = new Dictionary<int, int>();
 			// if we don't have a symbol table, build 
 			// the symbol lookup from the states.
@@ -525,69 +486,71 @@ namespace Rolex
 				var i = 0;
 				for (int jc = closure.Count, j = 0; j < jc; ++j)
 				{
-					var ffa = closure[j];
-					if (ffa.IsAccepting && !symbolLookup.ContainsKey(ffa.AcceptSymbol))
+					var fa = closure[j];
+					if (fa.IsAccepting && !symbolLookup.ContainsKey(fa.AcceptSymbol))
 					{
-						symbolLookup.Add(ffa.AcceptSymbol, i);
+						if (0 > fa.AcceptSymbol)
+							throw new InvalidOperationException("An accept symbol was never specified for state q" + jc.ToString());
+						symbolLookup.Add(fa.AcceptSymbol, i);
 						++i;
 					}
 				}
 			}
 			else // build the symbol lookup from the symbol table
 				for (int ic = symbolTable.Count, i = 0; i < ic; ++i)
+				{
 					symbolLookup.Add(symbolTable[i], i);
+				}
 
 			// build the root array
-			var result = new NfaEntry[closure.Count];
+			var result = new DfaEntry[closure.Count];
 			for (var i = 0; i < result.Length; i++)
 			{
-				var ffa = closure[i];
+				var fa = closure[i];
+#if DEBUG
+				if (fa.IsAccepting)
+					System.Diagnostics.Debug.Assert(-1 < fa.AcceptSymbol, "Illegal accept symbol " + fa.AcceptSymbol.ToString() + " was found on state state q" + i.ToString());
+#endif
 				// get all the transition ranges for each destination state
-				var trgs = ffa.FillInputTransitionRangesGroupedByState();
+				var trgs = fa.FillInputTransitionRangesGroupedByState();
 				// make a new transition entry array for our DFA state table
-				var trns = new NfaTransitionEntry[trgs.Count];
+				var trns = new DfaTransitionEntry[trgs.Count];
 				var j = 0;
 				// for each transition range
 				foreach (var trg in trgs)
 				{
 					// add the transition entry using
 					// the packed ranges from CharRange
-					trns[j] = new NfaTransitionEntry(
+					trns[j] = new DfaTransitionEntry(
 						trg.Value,
 						closure.IndexOf(trg.Key));
 
 					++j;
 				}
-				j = 0;
-				var eps = new int[ffa.EpsilonTransitions.Count];
-				foreach (var efa in ffa.EpsilonTransitions)
-				{
-					eps[j] = closure.IndexOf(efa);
-					++j;
-				}
+
 				// now add the state entry for the state above
-				result[i] = new NfaEntry(
-				  ffa.IsAccepting ? symbolLookup[ffa.AcceptSymbol] : -1,
-					trns,
-					eps);
+#if DEBUG
+				if (fa.IsAccepting && !symbolLookup.ContainsKey(fa.AcceptSymbol))
+				{
+					try
+					{
+						dfa.RenderToFile(@"dfastatetable_crashdump_dfa.jpg");
+					}
+					catch
+					{
+
+					}
+					System.Diagnostics.Debug.Assert(false, "The symbol table did not contain an entry for state q" + i.ToString());
+				}
+#endif
+				result[i] = new DfaEntry(
+					fa.IsAccepting ? symbolLookup[fa.AcceptSymbol] : -1,
+					trns);
 
 			}
 			return result;
 		}
 	}
 
-	class ConsoleProgress : IProgress<FAProgress>
-	{
-		TextWriter _stderr;
-		public ConsoleProgress(TextWriter stderr)
-		{
-			_stderr = stderr;
-		}
-		public void Report(FAProgress progress)
-		{
-			_stderr.Write(".");
-			_stderr.Flush();
-		}
-	}
 
 }

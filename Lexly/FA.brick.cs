@@ -1008,23 +1008,25 @@ trns.Value);}int lc=s.EpsilonTransitions.Count;var epsl=new List<FA>(s.EpsilonTr
 if(targets.Contains(e))e=replacement;if(!s.EpsilonTransitions.Contains(e))s.EpsilonTransitions.Add(e);}}}dups.Clear();++k;}else{++k;break;}oc=c;var f=
 lclosure[0];lclosure=new List<FA>();f.FillClosure(lclosure);c=lclosure.Count;}}
 #region _SetComparer
- private sealed class _SetComparer:IEqualityComparer<IList<FA>>,IEqualityComparer<ICollection<FA>>,IEqualityComparer<IDictionary<KeyValuePair<int,int>,
-FA>>{ public bool Equals(IList<FA>lhs,IList<FA>rhs){if(ReferenceEquals(lhs,rhs))return true;else if(ReferenceEquals(null,lhs)||ReferenceEquals(null,rhs))
-return false;if(lhs.Count!=rhs.Count)return false;using(var xe=lhs.GetEnumerator())using(var ye=rhs.GetEnumerator())while(xe.MoveNext()&&ye.MoveNext())
-if(!rhs.Contains(xe.Current)||!lhs.Contains(ye.Current))return false;return true;} public bool Equals(ICollection<FA>lhs,ICollection<FA>rhs){if(ReferenceEquals(lhs,
+ private sealed class _SetComparer:IEqualityComparer<IList<FA>>,IEqualityComparer<ICollection<FA>>,IEqualityComparer<ISet<FA>>,IEqualityComparer<IDictionary<KeyValuePair<int,int>,
+FA>>{ public bool Equals(ISet<FA>lhs,ISet<FA>rhs){if(ReferenceEquals(lhs,rhs))return true;else if(ReferenceEquals(null,lhs)||ReferenceEquals(null,rhs))
+return false;return lhs.SetEquals(rhs);} public bool Equals(IList<FA>lhs,IList<FA>rhs){if(ReferenceEquals(lhs,rhs))return true;else if(ReferenceEquals(null,
+lhs)||ReferenceEquals(null,rhs))return false;if(lhs.Count!=rhs.Count)return false;using(var xe=lhs.GetEnumerator())using(var ye=rhs.GetEnumerator())while
+(xe.MoveNext()&&ye.MoveNext())if(!rhs.Contains(xe.Current)||!lhs.Contains(ye.Current))return false;return true;} public bool Equals(ICollection<FA>lhs,
+ICollection<FA>rhs){if(ReferenceEquals(lhs,rhs))return true;else if(ReferenceEquals(null,lhs)||ReferenceEquals(null,rhs))return false;if(lhs.Count!=rhs.Count)
+return false;using(var xe=lhs.GetEnumerator())using(var ye=rhs.GetEnumerator())while(xe.MoveNext()&&ye.MoveNext())if(!rhs.Contains(xe.Current)||!lhs.Contains(ye.Current))
+return false;return true;}public bool Equals(IDictionary<KeyValuePair<int,int>,FA>lhs,IDictionary<KeyValuePair<int,int>,FA>rhs){if(ReferenceEquals(lhs,
 rhs))return true;else if(ReferenceEquals(null,lhs)||ReferenceEquals(null,rhs))return false;if(lhs.Count!=rhs.Count)return false;using(var xe=lhs.GetEnumerator())
 using(var ye=rhs.GetEnumerator())while(xe.MoveNext()&&ye.MoveNext())if(!rhs.Contains(xe.Current)||!lhs.Contains(ye.Current))return false;return true;}
-public bool Equals(IDictionary<KeyValuePair<int,int>,FA>lhs,IDictionary<KeyValuePair<int,int>,FA>rhs){if(ReferenceEquals(lhs,rhs))return true;else if(ReferenceEquals(null,
-lhs)||ReferenceEquals(null,rhs))return false;if(lhs.Count!=rhs.Count)return false;using(var xe=lhs.GetEnumerator())using(var ye=rhs.GetEnumerator())while
-(xe.MoveNext()&&ye.MoveNext())if(!rhs.Contains(xe.Current)||!lhs.Contains(ye.Current))return false;return true;}public bool Equals(IDictionary<FA,ICollection<KeyValuePair<int,int>>>
-lhs,IDictionary<FA,ICollection<KeyValuePair<int,int>>>rhs){if(ReferenceEquals(lhs,rhs))return true;else if(ReferenceEquals(null,lhs)||ReferenceEquals(null,
-rhs))return false;if(lhs.Count!=rhs.Count)return false;foreach(var trns in lhs){ICollection<KeyValuePair<int,int>>col;if(!rhs.TryGetValue(trns.Key,out
- col))return false;using(var xe=trns.Value.GetEnumerator())using(var ye=col.GetEnumerator())while(xe.MoveNext()&&ye.MoveNext())if(!col.Contains(xe.Current)
-||!trns.Value.Contains(ye.Current))return false;}return true;}public static bool _EqualsInput(ICollection<KeyValuePair<int,int>>lhs,ICollection<KeyValuePair<int,int>>
-rhs){if(ReferenceEquals(lhs,rhs))return true;else if(ReferenceEquals(null,lhs)||ReferenceEquals(null,rhs))return false;if(lhs.Count!=rhs.Count)return false;
-using(var xe=lhs.GetEnumerator())using(var ye=rhs.GetEnumerator())while(xe.MoveNext()&&ye.MoveNext())if(!rhs.Contains(xe.Current)||!lhs.Contains(ye.Current))
-return false;return true;}public int GetHashCode(IList<FA>lhs){var result=0;for(int ic=lhs.Count,i=0;i<ic;++i){var fa=lhs[i];if(null!=fa)result^=fa.GetHashCode();
-}return result;}public int GetHashCode(ICollection<FA>lhs){var result=0;foreach(var fa in lhs)if(null!=fa)result^=fa.GetHashCode();return result;}public
+public bool Equals(IDictionary<FA,ICollection<KeyValuePair<int,int>>>lhs,IDictionary<FA,ICollection<KeyValuePair<int,int>>>rhs){if(ReferenceEquals(lhs,
+rhs))return true;else if(ReferenceEquals(null,lhs)||ReferenceEquals(null,rhs))return false;if(lhs.Count!=rhs.Count)return false;foreach(var trns in lhs)
+{ICollection<KeyValuePair<int,int>>col;if(!rhs.TryGetValue(trns.Key,out col))return false;using(var xe=trns.Value.GetEnumerator())using(var ye=col.GetEnumerator())
+while(xe.MoveNext()&&ye.MoveNext())if(!col.Contains(xe.Current)||!trns.Value.Contains(ye.Current))return false;}return true;}public static bool _EqualsInput(ICollection<KeyValuePair<int,int>>
+lhs,ICollection<KeyValuePair<int,int>>rhs){if(ReferenceEquals(lhs,rhs))return true;else if(ReferenceEquals(null,lhs)||ReferenceEquals(null,rhs))return
+ false;if(lhs.Count!=rhs.Count)return false;using(var xe=lhs.GetEnumerator())using(var ye=rhs.GetEnumerator())while(xe.MoveNext()&&ye.MoveNext())if(!rhs.Contains(xe.Current)
+||!lhs.Contains(ye.Current))return false;return true;}public int GetHashCode(IList<FA>lhs){var result=0;for(int ic=lhs.Count,i=0;i<ic;++i){var fa=lhs[i];
+if(null!=fa)result^=fa.GetHashCode();}return result;}public int GetHashCode(ISet<FA>lhs){var result=0;foreach(var fa in lhs)if(null!=fa)result^=fa.GetHashCode();
+return result;}public int GetHashCode(ICollection<FA>lhs){var result=0;foreach(var fa in lhs)if(null!=fa)result^=fa.GetHashCode();return result;}public
  int GetHashCode(IDictionary<KeyValuePair<int,int>,FA>lhs){var result=0;foreach(var kvp in lhs)result^=kvp.GetHashCode();return result;}public static readonly
  _SetComparer Default=new _SetComparer();}
 #endregion
@@ -1204,20 +1206,20 @@ if(char.IsHighSurrogate((char)i)){i=char.ConvertToUtf32((char)i,(char)pc.Current
 /// </summary>
 /// <param name="progress">The progress of the operation</param>
 /// <returns>A new FSM that is deterministic</returns>
-public FA ToDfa(IProgress<FAProgress>progress=null){return _Determinize(this,progress);}public static FA _Determinize(FA fa,IProgress<FAProgress>progress
-=null){if(null!=progress)progress.Report(new FAProgress(FAStatus.DfaTransform,0));var p=new HashSet<int>();var closure=new List<FA>();fa.FillClosure(closure);
+public FA ToDfa(IProgress<FAProgress>progress=null){return _Determinize(this,progress);}static FA _Determinize(FA fa,IProgress<FAProgress>progress=null)
+{if(null!=progress)progress.Report(new FAProgress(FAStatus.DfaTransform,0));var p=new HashSet<int>();var closure=new List<FA>();fa.FillClosure(closure);
 for(int ic=closure.Count,i=0;i<ic;++i){var ffa=closure[i];p.Add(0);foreach(var t in ffa.InputTransitions){p.Add(t.Key.Key);if(t.Key.Value<0x10ffff){p.Add((t.Key.Value
-+1));}}}var points=new int[p.Count];p.CopyTo(points,0);Array.Sort(points);var comparer=_SetComparer.Default;var sets=new Dictionary<ICollection<FA>,ICollection<FA>>(comparer);
-var working=new Queue<ICollection<FA>>();var dfaMap=new Dictionary<ICollection<FA>,FA>(comparer);var initial=fa.FillEpsilonClosure();sets.Add(initial,
-initial);working.Enqueue(initial);var result=new FA();foreach(var afa in initial){if(afa.IsAccepting){result.IsAccepting=true;result.AcceptSymbol=afa.AcceptSymbol;
-break;}}dfaMap.Add(initial,result);var j=1;while(working.Count>0){ICollection<FA>s=working.Dequeue();var ecs=FillEpsilonClosure(s);FA dfa;dfaMap.TryGetValue(s,
++1));}}}var points=new int[p.Count];p.CopyTo(points,0);Array.Sort(points);var comparer=_SetComparer.Default;var sets=new Dictionary<HashSet<FA>,HashSet<FA>>(comparer);
+var working=new Queue<HashSet<FA>>();var dfaMap=new Dictionary<HashSet<FA>,FA>(comparer);var initial=new HashSet<FA>();fa.FillEpsilonClosure(initial);
+sets.Add(initial,initial);working.Enqueue(initial);var result=new FA();foreach(var afa in initial){if(afa.IsAccepting){result.IsAccepting=true;result.AcceptSymbol
+=afa.AcceptSymbol;break;}}dfaMap.Add(initial,result);var j=1;while(working.Count>0){var s=working.Dequeue();var ecs=FillEpsilonClosure(s);FA dfa;dfaMap.TryGetValue(s,
 out dfa);foreach(FA q in ecs){if(q.IsAccepting){dfa.IsAccepting=true;dfa.AcceptSymbol=q.AcceptSymbol;break;}}for(var i=0;i<points.Length;i++){var set=
 new HashSet<FA>();foreach(FA c in ecs){foreach(var trns in c.InputTransitions){if(trns.Key.Key<=points[i]&&points[i]<=trns.Key.Value){foreach(var efa in
- trns.Value.FillEpsilonClosure())set.Add(trns.Value);}}}if(!sets.ContainsKey(set)){sets.Add(set,set);working.Enqueue(set);dfaMap.Add(set,new FA());}FA
- dst;dfaMap.TryGetValue(set,out dst);int first=points[i];int last;if(i+1<points.Length)last=(points[i+1]-1);else last=0x10ffff;dfa.InputTransitions.Add(new
- KeyValuePair<int,int>(first,last),dst);}if(null!=progress)progress.Report(new FAProgress(FAStatus.DfaTransform,j));++j;} foreach(var ffa in result.FillClosure())
-{var itrns=new List<KeyValuePair<KeyValuePair<int,int>,FA>>(ffa.InputTransitions);foreach(var trns in itrns){if(null==trns.Value.FirstAcceptingState){
-ffa.InputTransitions.Remove(trns.Key);}}if(null!=progress)progress.Report(new FAProgress(FAStatus.DfaTransform,j));++j;}return result;}}}namespace F{/// <summary>
+ trns.Value.FillEpsilonClosure())set.Add(efa);}}}if(!sets.ContainsKey(set)){sets.Add(set,set);working.Enqueue(set);dfaMap.Add(set,new FA());}FA dst;dfaMap.TryGetValue(set,
+out dst);int first=points[i];int last;if(i+1<points.Length)last=(points[i+1]-1);else last=0x10ffff;dfa.InputTransitions.Add(new KeyValuePair<int,int>(first,
+last),dst);}if(null!=progress)progress.Report(new FAProgress(FAStatus.DfaTransform,j));++j;} foreach(var ffa in result.FillClosure()){var itrns=new List<KeyValuePair<KeyValuePair<int,
+int>,FA>>(ffa.InputTransitions);foreach(var trns in itrns){if(null==trns.Value.FirstAcceptingState){ffa.InputTransitions.Remove(trns.Key);}}if(null!=progress)
+progress.Report(new FAProgress(FAStatus.DfaTransform,j));++j;}return result;}}}namespace F{/// <summary>
 /// Represents the current status of the operation
 /// </summary>
 #if FALIB
