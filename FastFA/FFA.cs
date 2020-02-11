@@ -450,7 +450,7 @@ namespace F
 				switch (pc.Current)
 				{
 					case -1:
-						//result = result.ToMinimized();
+						result = result.ToMinimized();
 						return result;
 					case '.':
 						var dot = FFA.Set(new KeyValuePair<int, int>[] { new KeyValuePair<int, int>(0, 0x10ffff) }, accept);
@@ -632,7 +632,7 @@ namespace F
 							result = next;
 						break;
 					case ')':
-						//result = result.ToMinimized();
+						result = result.ToMinimized();
 						return result;
 					case '(':
 						pc.Advance();
