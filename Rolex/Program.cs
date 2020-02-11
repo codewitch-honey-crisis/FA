@@ -32,7 +32,6 @@ namespace Rolex
 			string nfagraph = null;
 			string dfagraph = null;
 			bool ignorecase = false;
-			bool prototype = false;
 			bool noshared = false;
 			bool ifstale = false;
 			// our working variables
@@ -95,9 +94,6 @@ namespace Rolex
 								break;
 							case "/ignorecase":
 								ignorecase = true;
-								break;
-							case "/prototype":
-								prototype = true;
 								break;
 							case "/noshared":
 								noshared = true;
@@ -194,25 +190,12 @@ namespace Rolex
 						}
 						var origName = "Rolex.";
 						CodeTypeDeclaration td = null;
-
-						if (prototype)
+						if (null == td)
 						{
-							ccu.ReferencedAssemblies.Add(typeof(Program).Assembly.GetName().FullName);
-							td = Deslanged.PrototypeTokenizerTemplate.Namespaces[1].Types[0];
+							td = Deslanged.TableTokenizerTemplate.Namespaces[1].Types[0];
 							origName += td.Name;
 							td.Name = codeclass;
 							CodeGenerator.GenerateSymbolConstants(td, symbolTable);
-						}
-						else
-						{
-							
-							if (null == td)
-							{
-								td = Deslanged.TableTokenizerTemplate.Namespaces[1].Types[0];
-								origName += td.Name;
-								td.Name = codeclass;
-								CodeGenerator.GenerateSymbolConstants(td, symbolTable);
-							}
 						}
 						CodeDomVisitor.Visit(td, (ctx) =>
 						{
@@ -247,9 +230,7 @@ namespace Rolex
 						}
 						if (!hasColNS)
 							cns.Imports.Add(new CodeNamespaceImport("System.Collections.Generic"));
-						if (prototype)
-							cns.Imports.Add(new CodeNamespaceImport("Rolex"));
-
+						
 						stderr.WriteLine();
 						var prov = CodeDomProvider.CreateProvider(codelanguage);
 						var opts = new CodeGeneratorOptions();
@@ -345,7 +326,7 @@ namespace Rolex
 		{
 			w.Write("Usage: "+Filename + " ");
 			w.WriteLine("<inputfile> [/output <outputfile>] [/class <codeclass>] [/namespace <codenamespace>]");
-			w.WriteLine("   [/language <codelanguage> [/ignorecase] [/prototype] [/noshared] [/ifstale]");
+			w.WriteLine("   [/language <codelanguage> [/ignorecase] [/noshared] [/ifstale]");
 			w.WriteLine();
 			w.WriteLine(Name + " generates a lexer/scanner/tokenizer in the target .NET language");
 			w.WriteLine();
@@ -355,7 +336,6 @@ namespace Rolex
 			w.WriteLine("   <codenamespace> The namespace to generate the code under - defaults to none");
 			w.WriteLine("   <codelanguage>  The .NET language to generate the code in - default derived from <outputfile>");
 			w.WriteLine("   <ignorecase>    Create a case insensitive lexer - defaults to case sensitive");
-			w.WriteLine("   <prototype>     Quickly generate a prototype lexer. Requires a reference to "+Filename+" to use - default not a prototype");
 			w.WriteLine("   <noshared>      Do not generate the shared code as part of the output. Defaults to generating the shared code");
 			w.WriteLine("   <ifstale>       Only generate if the input is newer than the output");
 			w.WriteLine();
